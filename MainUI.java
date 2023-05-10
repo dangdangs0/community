@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.ImageIcon;
 
 //2023.04.27~
 //Main UI
@@ -22,7 +23,7 @@ public class MainUI extends JFrame { //JFrame 상속
         contentPane.setBackground(Color.white);//배경 색 지정
         contentPane.setLayout(null);
 
-        Font font=new Font("경기천년제목 Medium",Font.TRUETYPE_FONT, 15);
+        Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
 
 
         //종료 버튼 클릭시 2023.04.29-2023.04.30
@@ -45,6 +46,21 @@ public class MainUI extends JFrame { //JFrame 상속
             }
         });
         contentPane.add(exit); //X 버튼 생성 및 종료 기능 추가!
+
+
+        //2023.05.10 사용자 프로필 사진
+        ImageIcon defaultUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+        JLabel defaultIcon=new JLabel(defaultUserIcon);
+        defaultIcon.setBounds(950,20,50,50);
+        contentPane.add(defaultIcon);
+
+        //2023.05.10 사용자 닉네임
+        JLabel nickname=new JLabel("로그인해주세요");
+        nickname.setLocation(830,20);
+        nickname.setSize(100,50);
+        nickname.setFont(font);
+        nickname.setHorizontalAlignment(JLabel.RIGHT);
+        contentPane.add(nickname);
 
 
         //HintTextField 사용해서 커서 가면 자동으로 지워지도록..! 2023.05.01
@@ -71,12 +87,18 @@ public class MainUI extends JFrame { //JFrame 상속
         board.setShowGrid(false);
         board.setFont(font);
 
-        //테이블 수정 금지 2023.05.06
-
-
+        //테이블 수정 금지 2023.05.09
+        board.setModel(new DefaultTableModel(temp,col){
+           @Override
+           public boolean isCellEditable(int row, int column) {
+               return false;
+           }
+        });
         board.getTableHeader().setReorderingAllowed(false);//열 이동 불가
         board.getTableHeader().setResizingAllowed(false);//크기 조절 불가
         board.setRowHeight(200); //행 높이
+
+
         //JScroll  2023.05.04 스크롤 바 만들기
         panel.add(board);
         JScrollPane scroll=new JScrollPane(board);
