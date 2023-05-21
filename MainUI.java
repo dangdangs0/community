@@ -1,17 +1,14 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import javax.swing.ImageIcon;
 
-//2023.04.27~
+//2023.04.27~2023.05.15 1차 완료
 //Main UI
 public class MainUI extends JFrame { //JFrame 상속
     public Point initialClick; //마우스의 x, y좌표 저장
-
+    public static Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
     //프레임 생성
     public MainUI(){
         setSize(1080,720);
@@ -22,9 +19,6 @@ public class MainUI extends JFrame { //JFrame 상속
         Container contentPane=getContentPane();
         contentPane.setBackground(Color.white);//배경 색 지정
         contentPane.setLayout(null);
-
-        Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
-
 
         //종료 버튼 클릭시 2023.04.29-2023.04.30
         JButton exit=new JButton("X");
@@ -55,13 +49,41 @@ public class MainUI extends JFrame { //JFrame 상속
         contentPane.add(defaultIcon);
 
         //2023.05.10 사용자 닉네임
-        JLabel nickname=new JLabel("로그인해주세요");
+        JLabel nickname=new JLabel("<html><u>로그인해주세요</u></html>");
         nickname.setLocation(830,20);
         nickname.setSize(100,50);
         nickname.setFont(font);
+        nickname.setForeground(Color.BLUE);
         nickname.setHorizontalAlignment(JLabel.RIGHT);
+
+        //사용자 닉네임에 어차피 특수문자 안받을거니까.. _이거 빼고
+        //로그인 하지 않은 사용자 (.equals("로그인해주세요"))
+        //2023.05.19
+        String noLogin=nickname.getText();
+        if(noLogin.equals("<html><u>로그인해주세요</u></html>")){
+            nickname.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    //LoginPopupUI로 이동할거임
+                    new LoginPopupUI();
+                }
+            });
+        }
         contentPane.add(nickname);
 
+
+
+        //2023.05.11 돋보기 아이콘
+        ImageIcon searchIcon=new ImageIcon("D:\\study\\Community\\img\\search_icon.png");
+        JLabel sIcon=new JLabel(searchIcon);
+        sIcon.setBounds(40,20,50,50);
+        contentPane.add(sIcon);
+
+        //2023.05.11 새로고침 아이콘 -- 누르면 새로고침 되어야함..
+        ImageIcon refreshIcon=new ImageIcon("D:\\study\\Community\\img\\refresh_icon.png");
+        JLabel rIcon=new JLabel(refreshIcon);
+        rIcon.setBounds(980,650,50,50);
+        contentPane.add(rIcon);
 
         //HintTextField 사용해서 커서 가면 자동으로 지워지도록..! 2023.05.01
         JTextField search=new HintTextField("Search");
@@ -78,24 +100,38 @@ public class MainUI extends JFrame { //JFrame 상속
         contentPane.add(searchBtn);
 
 
+
+
         //게시판 테이블 2023.05.03
+        //게시판에 사진 넣기, 헤더 없애기 2023.05.15
         JPanel panel=new JPanel();
         panel.setBackground(Color.white);
-        String col[]={"게시판 제목","작성자"};// 속성
-        Object temp[][]={{"임시 게시판입니다","나"},{"대체 왜 안나와!??","또 나다"}}; //내용
+        JButton deny=new JButton();
+        String col[]={"사진","제목","글쓴이","설정"};// 속성
+        Object temp[][]=
+                {{new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\13.png"),"임시 게시판입니다","나",deny},
+                        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\14.png"),"대체 왜 안나와!??","또 나다",deny},
+                        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\15.png"),"미안합니다 테스트 해야합니다","관리자",deny}}; //내용
         JTable board=new JTable(temp,col);
         board.setShowGrid(false);
         board.setFont(font);
+        board.setTableHeader(null); //테이블 헤더 없앰
 
         //테이블 수정 금지 2023.05.09
+        //테이블 행 위치 못바꾸도록 설정
         board.setModel(new DefaultTableModel(temp,col){
            @Override
            public boolean isCellEditable(int row, int column) {
                return false;
            }
+
+            @Override
+            public Class getColumnClass(int columnIndex) {
+                return getValueAt(0, columnIndex).getClass();
+            }
         });
-        board.getTableHeader().setReorderingAllowed(false);//열 이동 불가
-        board.getTableHeader().setResizingAllowed(false);//크기 조절 불가
+//        board.getTableHeader().setReorderingAllowed(false);//열 이동 불가
+//        board.getTableHeader().setResizingAllowed(false);//크기 조절 불가
         board.setRowHeight(200); //행 높이
 
 
@@ -108,8 +144,6 @@ public class MainUI extends JFrame { //JFrame 상속
         panel.setBounds(40, 80,1000,600);
         contentPane.add(panel); // 스크롤바를 테이블에 부착
 
-
-        //테이블 행 위치 못바꾸도록 설정
 
         setVisible(true); //Frame 화면에 띄우기
 
