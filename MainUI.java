@@ -8,6 +8,9 @@ import javax.swing.ImageIcon;
 //Main UI
 public class MainUI extends JFrame { //JFrame 상속
     public Point initialClick; //마우스의 x, y좌표 저장
+    public static JLabel defaultIcon;
+    public static JButton exit;
+    public static JLabel nickname;
     public static Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
     //프레임 생성
     public MainUI(){
@@ -21,7 +24,7 @@ public class MainUI extends JFrame { //JFrame 상속
         contentPane.setLayout(null);
 
         //종료 버튼 클릭시 2023.04.29-2023.04.30
-        JButton exit=new JButton("X");
+        exit=new JButton("X");
         exit.setBackground(null);
 //        exit.setBorderPainted(false);//테두리 없앰
         exit.setContentAreaFilled(false);
@@ -44,12 +47,20 @@ public class MainUI extends JFrame { //JFrame 상속
 
         //2023.05.10 사용자 프로필 사진
         ImageIcon defaultUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
-        JLabel defaultIcon=new JLabel(defaultUserIcon);
+        defaultIcon=new JLabel(defaultUserIcon);
         defaultIcon.setBounds(950,20,50,50);
+        defaultIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                new SettingUI();
+
+                //나중에는 밑에 메뉴 뜨게 바꿔야함
+            }
+        });
         contentPane.add(defaultIcon);
 
         //2023.05.10 사용자 닉네임
-        JLabel nickname=new JLabel("<html><u>로그인해주세요</u></html>");
+        nickname=new JLabel("<html><u>로그인해주세요</u></html>");
         nickname.setLocation(830,20);
         nickname.setSize(100,50);
         nickname.setFont(font);
@@ -100,8 +111,6 @@ public class MainUI extends JFrame { //JFrame 상속
         contentPane.add(searchBtn);
 
 
-
-
         //게시판 테이블 2023.05.03
         //게시판에 사진 넣기, 헤더 없애기 2023.05.15
         JPanel panel=new JPanel();
@@ -120,16 +129,28 @@ public class MainUI extends JFrame { //JFrame 상속
         //테이블 수정 금지 2023.05.09
         //테이블 행 위치 못바꾸도록 설정
         board.setModel(new DefaultTableModel(temp,col){
-           @Override
-           public boolean isCellEditable(int row, int column) {
-               return false;
-           }
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
 
             @Override
             public Class getColumnClass(int columnIndex) {
                 return getValueAt(0, columnIndex).getClass();
             }
         });
+
+        //더블 클릭 이벤트 2023.05.24
+        board.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(e.getClickCount()==2){
+                    new PostUI();
+                    dispose();
+                }
+            }
+        });
+
 //        board.getTableHeader().setReorderingAllowed(false);//열 이동 불가
 //        board.getTableHeader().setResizingAllowed(false);//크기 조절 불가
         board.setRowHeight(200); //행 높이
@@ -154,7 +175,7 @@ public class MainUI extends JFrame { //JFrame 상속
     }
 
     //창 이동을 위한 것 (타이틀 바 없애서!)
-    class moveWindows extends MouseAdapter{
+    public class moveWindows extends MouseAdapter{
         public void mousePressed(MouseEvent e){
             initialClick=e.getPoint();//현재 좌표 저장
             getComponentAt(initialClick);//지정한 좌표 포함 컴포넌트 리턴
