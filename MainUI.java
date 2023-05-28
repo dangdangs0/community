@@ -47,16 +47,13 @@ public class MainUI extends JFrame { //JFrame 상속
 
         //2023.05.10 사용자 프로필 사진
         ImageIcon defaultUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+        Image img=defaultUserIcon.getImage();
+        Image newing=img.getScaledInstance(50,50,Image.SCALE_SMOOTH);
+        defaultUserIcon=new ImageIcon(newing);
+        //사진 크기 조정 (05.27.. 덕분에 원본 화질로 이쁘게 저장 가능)
+
         defaultIcon=new JLabel(defaultUserIcon);
         defaultIcon.setBounds(950,20,50,50);
-        defaultIcon.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                new SettingUI();
-
-                //나중에는 밑에 메뉴 뜨게 바꿔야함
-            }
-        });
         contentPane.add(defaultIcon);
 
         //2023.05.10 사용자 닉네임
@@ -66,6 +63,45 @@ public class MainUI extends JFrame { //JFrame 상속
         nickname.setFont(font);
         nickname.setForeground(Color.BLUE);
         nickname.setHorizontalAlignment(JLabel.RIGHT);
+
+        //사용자 팝업창(2023.05.28)
+        //로그인 된 사용자만! 나중에 풀어야함
+        
+//        if(!nickname.getText().equals("<html><u>로그인해주세요</u></html>")){
+            JPopupMenu popupMenu=new JPopupMenu("User");
+
+            JMenuItem managePost=new JMenuItem("내 게시글 관리");
+            managePost.setFont(font);
+            JMenuItem manageLike=new JMenuItem("좋아요 관리");
+            manageLike.setFont(font);
+            JMenuItem setting=new JMenuItem("설정");
+            setting.setFont(font);
+            setting.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new SettingUI();
+                    dispose();
+                }
+            });
+
+            popupMenu.add(managePost);
+            popupMenu.addSeparator();//구분선 추가
+            popupMenu.add(manageLike);
+            popupMenu.addSeparator();//구분선 추가
+            popupMenu.add(setting);
+
+
+
+            defaultIcon.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    popupMenu.show(contentPane,950,80);
+                }
+            });
+
+            contentPane.add(popupMenu);
+//        }
+
 
         //사용자 닉네임에 어차피 특수문자 안받을거니까.. _이거 빼고
         //로그인 하지 않은 사용자 (.equals("로그인해주세요"))
@@ -81,7 +117,6 @@ public class MainUI extends JFrame { //JFrame 상속
             });
         }
         contentPane.add(nickname);
-
 
 
         //2023.05.11 돋보기 아이콘
@@ -113,9 +148,10 @@ public class MainUI extends JFrame { //JFrame 상속
 
         //게시판 테이블 2023.05.03
         //게시판에 사진 넣기, 헤더 없애기 2023.05.15
+        //버튼 테이블에 넣기
         JPanel panel=new JPanel();
         panel.setBackground(Color.white);
-        JButton deny=new JButton();
+        JButton deny=new JButton(":");
         String col[]={"사진","제목","글쓴이","설정"};// 속성
         Object temp[][]=
                 {{new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\13.png"),"임시 게시판입니다","나",deny},
