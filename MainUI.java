@@ -3,6 +3,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.ImageIcon;
+import javax.swing.table.TableCellRenderer;
 
 //2023.04.27~2023.05.15 1차 완료
 //Main UI
@@ -66,7 +67,7 @@ public class MainUI extends JFrame { //JFrame 상속
 
         //사용자 팝업창(2023.05.28)
         //로그인 된 사용자만! 나중에 풀어야함
-        
+
 //        if(!nickname.getText().equals("<html><u>로그인해주세요</u></html>")){
             JPopupMenu popupMenu=new JPopupMenu("User");
 
@@ -90,12 +91,11 @@ public class MainUI extends JFrame { //JFrame 상속
             popupMenu.addSeparator();//구분선 추가
             popupMenu.add(setting);
 
-
-
+            //PostUI에서 팝업메뉴 안열리는거 고쳐야함!
             defaultIcon.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    popupMenu.show(contentPane,950,80);
+                    popupMenu.show(getContentPane(),920,80);
                 }
             });
 
@@ -160,6 +160,7 @@ public class MainUI extends JFrame { //JFrame 상속
         JTable board=new JTable(temp,col);
         board.setShowGrid(false);
         board.setFont(font);
+        board.setSelectionBackground(Color.white);
         board.setTableHeader(null); //테이블 헤더 없앰
 
         //테이블 수정 금지 2023.05.09
@@ -189,6 +190,8 @@ public class MainUI extends JFrame { //JFrame 상속
 
 //        board.getTableHeader().setReorderingAllowed(false);//열 이동 불가
 //        board.getTableHeader().setResizingAllowed(false);//크기 조절 불가
+        board.getColumnModel().getColumn(3).setCellRenderer(new TableCell());
+        board.getColumnModel().getColumn(3).setCellEditor(new TableCell());
         board.setRowHeight(200); //행 높이
 
 
