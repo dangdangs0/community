@@ -20,6 +20,22 @@ public class PostUI extends JFrame {
         contentPane.setBackground(Color.white);//배경 색 지정
         contentPane.setLayout(null);
 
+        //뒤로가기 아이콘
+        ImageIcon go_back_Icon=new ImageIcon("D:\\study\\Community\\img\\go_back_icon.png");
+        Image image=go_back_Icon.getImage();
+        Image news=image.getScaledInstance(30,30,Image.SCALE_SMOOTH);
+        go_back_Icon=new ImageIcon(news);
+        JLabel backIcon=new JLabel(go_back_Icon);
+        backIcon.setBounds(20,20,50,50);
+        backIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                new MainUI();
+                dispose();
+            }
+        });
+        contentPane.add(backIcon);
+
         MainUI.defaultIcon.setBounds(950,20,50,50);
         contentPane.add(MainUI.defaultIcon); //유저 아이콘
 
@@ -72,6 +88,10 @@ public class PostUI extends JFrame {
 
         //2023.05.25 작성자 아이콘
         ImageIcon wIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+        Image img=wIcon.getImage();
+        Image newing=img.getScaledInstance(50,50,Image.SCALE_SMOOTH);
+        wIcon=new ImageIcon(newing);
+
         JLabel writerIcon=new JLabel(wIcon);
         writerIcon.setBounds(55,130,50,50);
         panel.add(writerIcon);
@@ -84,6 +104,34 @@ public class PostUI extends JFrame {
         writerName.setForeground(Color.BLACK);
         writerName.setHorizontalAlignment(JLabel.LEFT);
         panel.add(writerName);
+
+        //2023.05.29 작성자 팝업
+        JPopupMenu writerMenu=new JPopupMenu("Writer");
+
+        JMenuItem seePose=new JMenuItem(writerName.getText()+"님의 게시글 보기");
+        seePose.setFont(MainUI.font);
+        seePose.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new UserProfileUI();
+                dispose();
+            }
+        });
+        JMenuItem block=new JMenuItem("차단하기");
+        block.setFont(MainUI.font);
+
+        writerMenu.add(seePose);
+        writerMenu.addSeparator();//구분선 추가
+        writerMenu.add(block);
+
+        writerName.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                writerMenu.show(contentPane,100,250);
+            }
+        });
+
+        contentPane.add(writerMenu);
 
         String userText="Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
         "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
