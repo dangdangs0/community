@@ -1,103 +1,110 @@
+//2023.05.17~05.19
+
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.*;
 
-public class UserProfileUI extends JFrame {
-    public UserProfileUI(){
-        //나중에는 매개변수로 어떤 사용자의 게시글 정보를 볼 지 지정
+public class LoginPopupUI extends JFrame{
+    Connection con=null;
+    public LoginPopupUI(){
+        //06.22 DB 연동
+        try{//DB 연동
+            String driver="oracle.jdbc.driver.OracleDriver";
+            String url="jdbc:oracle:thin:@localhost:1521:orcl";
+            String user=유저명;
+            String password=비밀번호;
+            this.con= DriverManager.getConnection(url,user,password);
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("입력 실패");
+        }
 
-        setSize(720,900);
+
+        setSize(500,300);
         setResizable(false); //크기 변경 불가능
         setLocationRelativeTo(null); //화면 가운데 배치
-        setUndecorated(true);//타이틀 바 제거
+        Container c=getContentPane();
+        c.setLayout(null);
+        c.setBackground(Color.white);
 
-        Container contentPane=getContentPane();
-        contentPane.setBackground(Color.white);//배경 색 지정
-        contentPane.setLayout(null);
+        Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
 
-        ImageIcon go_back_Icon=new ImageIcon("D:\\study\\Community\\img\\go_back_icon.png");
-        Image back=go_back_Icon.getImage();
-        Image newBack=back.getScaledInstance(30,30,Image.SCALE_SMOOTH);
-        go_back_Icon=new ImageIcon(newBack);
-        JLabel backIcon=new JLabel(go_back_Icon);
-        backIcon.setBounds(20,20,50,50);
-        backIcon.addMouseListener(new MouseAdapter() {
+        //HintTextField 사용해서 커서 가면 자동으로 지워지도록..! 2023.05.01
+        JTextField id=new HintTextField("ID");
+        id.setLocation(30,50);
+        id.setSize(300,50);
+        c.add(id);
+
+        JTextField pw=new HintTextField("PW");
+        pw.setLocation(30,110);
+        pw.setSize(300,50);
+        c.add(pw);
+
+        JButton login=new JButton("로그인");
+        login.setLocation(350,50);
+        login.setSize(100,110);
+        c.add(login);
+
+        JLabel isFirst=new JLabel("처음이신가요?");
+        isFirst.setLocation(140,190);
+        isFirst.setSize(100,30);
+        isFirst.setFont(font);
+        c.add(isFirst);
+
+        //하이퍼링크 걸기
+        JLabel createAccount=new JLabel("<HTML><U>Create Account<HTML><U>");
+        createAccount.setLocation(240,190);
+        createAccount.setSize(150,30);
+        createAccount.setFont(font);
+        createAccount.setForeground(Color.BLUE);
+        createAccount.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new PostUI();
+                //LoginPopupUI로 이동할거임
+                new SignUpPopupUI();
                 dispose();
             }
         });
-        contentPane.add(backIcon);
-
-        //나중에는 DB에서 해당 작성자 사진을 가져올거임
-        ImageIcon wIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
-        Image img=wIcon.getImage();
-        Image newing=img.getScaledInstance(100,100,Image.SCALE_SMOOTH);
-        wIcon=new ImageIcon(newing);
-
-        JLabel writerIcon=new JLabel(wIcon);
-        writerIcon.setBounds(100,50,100,100);
-        contentPane.add(writerIcon);
+        c.add(createAccount);
 
 
-        JLabel writerName=new JLabel("닉네임");
-        writerName.setLocation(220,60);
-        writerName.setSize(200,50);
-        writerName.setFont(SettingUI.semiTitleFont);
-        writerName.setForeground(Color.BLACK);
-        writerName.setHorizontalAlignment(JLabel.LEFT);
-        contentPane.add(writerName);
-
-        JLabel writerProfile=new JLabel("한줄소개쓰으으으");
-        writerProfile.setLocation(220,100);
-        writerProfile.setSize(200,50);
-        writerProfile.setFont(SettingUI.semiTitleFont);
-        writerProfile.setForeground(Color.BLACK);
-        writerProfile.setHorizontalAlignment(JLabel.LEFT);
-        contentPane.add(writerProfile);
-
-        JPanel postList=new JPanel();
-        postList.setBounds(40,200,650,700);
-
-        //각각의 포스트들 JPanel에 붙이기! 2023.05.31
-        String[] col={"사진,제목,설정"};
-        Object temp[][]= {{new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\13.png"),"임시 게시판입니다",":"},
-        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\14.png"),"대체 왜 안나와!??",":"},
-        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\15.png"),"미안합니다 테스트 해야합니다",":"}};
-
-        JTable board=new JTable(temp,col);
-        board.setShowGrid(false);
-        board.setFont(MainUI.font);
-        board.setSelectionBackground(Color.white);
-        board.setTableHeader(null); //테이블 헤더 없앰
-        board.setModel(new DefaultTableModel(temp,col){
+        //06.22 DB 연동
+        login.addActionListener(new ActionListener() {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public void actionPerformed(ActionEvent e) {
+                String ID=id.getText();
+                String PW=pw.getText();
+                String sql="select * from 회원 where 아이디='"+ID+"'";
+                try{
+                    Statement stat=con.createStatement();
+                    ResultSet rs=stat.executeQuery(sql);
+                    if(rs.next()){
+                        if(ID.equals(rs.getString("아이디"))){
+                            if(PW.equals(rs.getString("비밀번호"))){
+                                JOptionPane.showMessageDialog(null,"로그인 성공","로그인 성공",JOptionPane.INFORMATION_MESSAGE);
+//                                new MainUI(con,rs.getString("아이디"));
 
-            @Override
-            public Class getColumnClass(int columnIndex) {
-                return getValueAt(0, columnIndex).getClass();
+                                dispose();
+                            }
+                            else{
+                                JOptionPane.showMessageDialog(null,"아이디 또는 비밀번호를 다시 확인해주세요","로그인 실패",JOptionPane.WARNING_MESSAGE);
+                            }
+                        }
+
+                    }
+                    else{
+                        JOptionPane.showMessageDialog(null,"아이디 또는 비밀번호를 다시 확인해주세요","로그인 실패",JOptionPane.WARNING_MESSAGE);
+                    }
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
 
-
-
-        //내일은 옆에 애들 마저 붙이기
-//        board.getColumnModel().getColumn(2).setCellRenderer(new TableCell());
-//        board.getColumnModel().getColumn(2).setCellEditor(new TableCell());
-        board.setRowHeight(100); //행 높이
-        postList.add(board);
-        JScrollPane scrollPane=new JScrollPane(board);
-        postList.add(scrollPane);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        contentPane.add(postList);
-
         setVisible(true);
-}
-
+    }
 }
