@@ -2,10 +2,23 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.*;
 
 //2023.05.19~2023.05.22 1차 끝
 public class SignUpPopupUI extends JFrame {
+    Connection con=null;
     public SignUpPopupUI(){
+        try{//DB 연동
+            String driver="oracle.jdbc.driver.OracleDriver";
+            String url="jdbc:oracle:thin:@localhost:1521:orcl";
+            String user=유저명;
+            String password=데이터베이스 비밀번호;
+            this.con= DriverManager.getConnection(url,user,password);
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("입력 실패");
+        }
+
         Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 22);
         String[] interest={"없음","요리","게임","정치","종교","만화","음악"};
 
@@ -72,7 +85,6 @@ public class SignUpPopupUI extends JFrame {
         c.add(nickname);
 
 
-
         JLabel interestLabel=new JLabel("관심 분야");
         interestLabel.setFont(font);
         interestLabel.setSize(120,50);
@@ -93,7 +105,85 @@ public class SignUpPopupUI extends JFrame {
         regist.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                dispose();
+                String ID=id.getText();
+                String PW=pw.getText();
+                String confirmPW=confirmPw.getText();
+                String nick=nickname.getText();
+                String inter=interestCombo.getSelectedItem().toString();
+
+                if(ID.equals("")||PW.equals("")||confirmPW.equals("")||nick.equals("")){
+                    //하나라도 공백이면
+                    JOptionPane.showMessageDialog(null,"입력하지 않은 내용이 있습니다.",null,JOptionPane.WARNING_MESSAGE);
+                } else if (PW.length()<8) {
+                    JOptionPane.showMessageDialog(null,"비밀번호는 8글자 이상으로 적어주세요.",null,JOptionPane.WARNING_MESSAGE);
+                    //비밀번호가 8글자 이상
+                }else {
+                    String sql = "select * from 회원 where 아이디='" + ID + "'";
+                    try {
+                        Statement stat = con.createStatement();
+                        ResultSet rs = stat.executeQuery(sql);
+                        if (rs.next()) {
+                            JOptionPane.showMessageDialog(null, "이미 존재하는 아이디입니다.", null, JOptionPane.WARNING_MESSAGE);
+                        }else { //사용 가능한 아이디
+                            if (!PW.equals(confirmPW)) {
+                                //비밀번호 확인이 틀림
+                                JOptionPane.showMessageDialog(null, "비밀번호를 다시 확인해 주세요", null, JOptionPane.WARNING_MESSAGE);
+                            } else {
+
+                                String sqlNick = "select * from 회원 where 닉네임='" + nick + "'";
+                                Statement stnick = con.createStatement();
+                                ResultSet rsnick = stnick.executeQuery(sqlNick);
+
+                                String temp=nick;
+                                temp=temp.replaceAll("[a-zA-Z0-9가-힣]","");
+                                temp=temp.replaceAll("_","");
+                                if(temp.length()==0){
+                                    //닉네임 굿굿
+                                    if (rsnick.next()) {
+                                        JOptionPane.showMessageDialog(null, "이미 존재하는 별명입니다.", null, JOptionPane.WARNING_MESSAGE);
+                                    } else {
+                                        Integer interNum = 0;
+                                        String findNum = "select 분야번호 from 분야 where 분야명='" + inter + "'";
+                                        try {
+                                            Statement stInter = con.createStatement();
+                                            ResultSet rsInter = stInter.executeQuery(findNum);
+                                            if (rsInter.next()) {
+                                                interNum = rsInter.getInt("분야번호");
+                                            }
+                                        } catch (SQLException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+
+                                        PreparedStatement pstmt = null;
+                                        String insertUser = "insert into 회원 values(?,?,?,?,?,?)";
+                                        pstmt = con.prepareStatement(insertUser);
+                                        pstmt.setString(1, ID);
+                                        pstmt.setString(2, PW);
+                                        pstmt.setString(3, nick);
+                                        if (inter.equals("없음")) {
+                                            pstmt.setNull(4, Types.INTEGER);
+                                        } else {
+                                            pstmt.setInt(4, interNum);
+                                        }
+
+                                        pstmt.setString(5, null);
+                                        pstmt.setString(6, null);
+                                        pstmt.executeUpdate();
+
+                                        JOptionPane.showMessageDialog(null, "회원가입이 완료되었습니다.", null, JOptionPane.INFORMATION_MESSAGE);
+                                        dispose();
+
+                                    }
+                                }
+                                else{
+                                    JOptionPane.showMessageDialog(null, "영어, 숫자, 한글, _ 로만 정해주세요.", null, JOptionPane.WARNING_MESSAGE);
+                                }
+                            }
+                        }
+                    } catch (SQLException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
             }
         });
 
