@@ -1,11 +1,20 @@
+import oracle.jdbc.proxy.annotation.OnError;
+
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import javax.swing.ImageIcon;
-import javax.swing.table.TableCellRenderer;
 
 //2023.04.27~2023.05.15 1차 완료
+//2023.06.26 DB 연동 및 새로고침 기능, 등등 추가
 //Main UI
 public class MainUI extends JFrame { //JFrame 상속
     public Point initialClick; //마우스의 x, y좌표 저장
@@ -13,8 +22,23 @@ public class MainUI extends JFrame { //JFrame 상속
     public static JButton exit;
     public static JLabel nickname;
     public static Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
+    Connection con=null;
+    public static JTable board;
+    DefaultTableModel model;
     //프레임 생성
     public MainUI(){
+
+        try{//DB 연동
+            String driver="oracle.jdbc.driver.OracleDriver";
+            String url="jdbc:oracle:thin:@localhost:1521:orcl";
+            String user=
+            String password=
+            this.con= DriverManager.getConnection(url,user,password);
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("입력 실패");
+        }
+
         setSize(1080,720);
         setResizable(false); //크기 변경 불가능
         setLocationRelativeTo(null); //화면 가운데 배치
@@ -151,13 +175,12 @@ public class MainUI extends JFrame { //JFrame 상속
         //버튼 테이블에 넣기
         JPanel panel=new JPanel();
         panel.setBackground(Color.white);
-        JButton deny=new JButton(":");
-        String col[]={"사진","제목","글쓴이","설정"};// 속성
-        Object temp[][]=
-                {{new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\13.png"),"임시 게시판입니다","나",deny},
-                        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\14.png"),"대체 왜 안나와!??","또 나다",deny},
-                        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\15.png"),"미안합니다 테스트 해야합니다","관리자",deny}}; //내용
-        JTable board=new JTable(temp,col);
+
+
+        //2023.06.28 DB랑 더 제대로 연동해보기
+        model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+
+        board=new JTable(model);
         board.setShowGrid(false);
         board.setFont(font);
         board.setSelectionBackground(Color.white);
@@ -165,18 +188,8 @@ public class MainUI extends JFrame { //JFrame 상속
 
         //테이블 수정 금지 2023.05.09
         //테이블 행 위치 못바꾸도록 설정
-        board.setModel(new DefaultTableModel(temp,col){
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
 
-            @Override
-            public Class getColumnClass(int columnIndex) {
-                return getValueAt(0, columnIndex).getClass();
-            }
-        });
-
+        tableFit(board);
         //더블 클릭 이벤트 2023.05.24
         board.addMouseListener(new MouseAdapter() {
             @Override
@@ -195,6 +208,21 @@ public class MainUI extends JFrame { //JFrame 상속
         board.setRowHeight(200); //행 높이
 
 
+        rIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                //새로고침을 누르면
+                model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                board.setModel(model);
+                model.fireTableDataChanged();
+
+
+                panel.revalidate();
+                panel.repaint();
+                SwingUtilities.updateComponentTreeUI(contentPane);
+            }
+        });
+
         //JScroll  2023.05.04 스크롤 바 만들기
         panel.add(board);
         JScrollPane scroll=new JScrollPane(board);
@@ -203,6 +231,9 @@ public class MainUI extends JFrame { //JFrame 상속
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         panel.setBounds(40, 80,1000,600);
         contentPane.add(panel); // 스크롤바를 테이블에 부착
+
+
+        //새로고침 이벤트
 
 
         setVisible(true); //Frame 화면에 띄우기
@@ -238,5 +269,105 @@ public class MainUI extends JFrame { //JFrame 상속
 
     public static void main(String[] args) {
         MainUI mainUI =new MainUI(); //프레임을 불러옴
+    }
+
+    private DefaultTableModel sqlRun(Connection con, String sql) {
+        String[] row = new String[5];
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Object [][]data = null;
+        String []columns = {"사진","제목","작성자","설정"};
+
+
+        ArrayList l = new ArrayList<Object>();
+        try {
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            Object[] ob = new Object[4];
+            int count = 0;
+            int count2 = 0;
+            while(rs.next()) {
+                InputStream in = rs.getBinaryStream(4);
+                if (in != null) {
+                    l.add(new ImageIcon(in.readAllBytes()));
+                }
+                else {
+                    l.add(null);
+                }
+                l.add(rs.getString(2).strip());
+                l.add(rs.getString(3).strip());
+                l.add(":");
+                
+                //2023.06.29 중간 정렬 하기!!
+                
+                count++;
+            }
+            data = new Object[count][4];
+            for (int i = 0; i < count; i++) {
+                for (int j = 0; j < 4; j++) {
+                    if (j == 0) {
+                        Image img = ((ImageIcon)l.get(count2)).getImage();
+                        img = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        data[i][j] = new ImageIcon(img);
+                    }
+                    else {
+                        data[i][j] = l.get(count2);
+                    }
+                    count2++;
+                }
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            try {
+                rs.close();
+                pstmt.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        DefaultTableModel model = new DefaultTableModel(data, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+            @Override
+            public Class<?> getColumnClass(int column) {
+                if (column >= 4) column = column % 4;
+                switch(column) {
+                    case 0: return ImageIcon.class;
+                    case 1, 2: return String.class;
+                    default: return Object.class;
+                }
+            }
+        };
+        return model;
+    }
+
+    private void tableFit(JTable table) {
+
+        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
+//        headerRenderer.setBackground(new Color(22, 185, 163));
+
+        for (int i0 = 0; i0 < table.getModel().getColumnCount(); i0++) {
+            table.getColumnModel().getColumn(i0).setHeaderRenderer(headerRenderer);
+        }
+
+        for (int row = 0; row < table.getRowCount(); row++)
+        {
+            int rowHeight = table.getRowHeight();
+            for (int column = 0; column < table.getColumnCount(); column++)
+            {
+                Component comp = table.prepareRenderer(table.getCellRenderer(row, column), row, column);
+                rowHeight = Math.max(rowHeight, comp.getPreferredSize().height);
+            }
+            table.setRowHeight(row, rowHeight);
+        }
+
+        table.getColumnModel().getColumn(0).setPreferredWidth(120);
+        table.getColumnModel().getColumn(1).setPreferredWidth(110);
+        table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setPreferredWidth(200);
     }
 }
