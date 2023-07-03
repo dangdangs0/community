@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -60,18 +62,11 @@ public class PostUI extends JFrame {
         JPanel panel=new JPanel();
         panel.setLayout(null);
         panel.setBackground(Color.white);
-        panel.setBounds(67, 80,950,700);
-        JScrollPane scroll=new JScrollPane(panel);
-
-        //2023.05.25
-        scroll.setLocation(1010,80);
-        scroll.setSize(15,640);
-        scroll.setPreferredSize(new Dimension(15,650));
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        contentPane.add(scroll);
-        contentPane.add(panel);
+        panel.setBounds(67, 80,950,180);
 
         //게시글 제목
+
+        //MainUI에서 받아와서 띄워줄거임
         JLabel title=new JLabel("게시글 제목이 적힐 것 입니다");
         title.setFont(titleFont);
         title.setHorizontalAlignment(JLabel.CENTER);
@@ -133,6 +128,10 @@ public class PostUI extends JFrame {
 
         contentPane.add(writerMenu);
 
+        JPanel forDetail=new JPanel();
+        forDetail.setBackground(Color.white);
+        forDetail.setBounds(120,260,850,450);
+
         String userText="Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
         "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
                 "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
@@ -142,20 +141,90 @@ public class PostUI extends JFrame {
         "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
                 "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
                 "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
+                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
+        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
+                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
+                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
+                "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
+                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
                 "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum.";
 
-        JLabel text=new JLabel("<HTML><center>"+userText+"</center></HTML>");
-        text.setLocation(100,150);
-        text.setBackground(Color.gray);
-        text.setSize(800,700);
+        String commentSpace="                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>";
+
+        userText+=commentSpace;
+
+
+        JLabel text=new JLabel("<HTML><center>"+userText+"</center></HTML><br/><br/>");
+        text.setLocation(100,200);
+        text.setSize(800,900);
         text.setFont(MainUI.font);
-        text.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        panel.add(text);
-
-        //JLabel 길이 길면 스크롤바 움직이도록
+        text.setOpaque(true);
+        text.setBackground(Color.white);
 
 
+        JSeparator sep=new JSeparator();
+        sep.setOrientation(SwingConstants.HORIZONTAL);
+        sep.setBounds(370,680,700,5);
+        sep.setForeground(Color.black);
+        text.add(sep);
 
+        forDetail.add(text);
+
+        //댓글창도 만들기
+        JTextArea comment=new JTextArea("");
+        comment.setBounds(430,710,600,200);
+//        comment.setBackground(Color.gray);
+        comment.setFont(MainUI.font);
+
+        TitledBorder border=BorderFactory.createTitledBorder("댓글");
+        border.setTitleFont(MainUI.font);
+        comment.setBorder(border);
+        text.add(comment);
+
+        JButton regist=new JButton("등록");
+        regist.setBounds(950,930,80,40);
+        regist.setFont(MainUI.font);
+        text.add(regist);
+        regist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //DB에 저장되어야 함
+            }
+        });
+
+
+
+        JScrollPane scroll=new JScrollPane(text);
+        forDetail.add(scroll);
+
+        //2023.05.25
+        scroll.setLocation(1000,260);
+        scroll.setSize(15,430);
+        scroll.setPreferredSize(new Dimension(850,430));
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scroll.getVerticalScrollBar().setUnitIncrement(16); //스크롤 시 속도 개선
+
+
+        scroll.getViewport().setViewPosition(new Point(300,0)); //스크롤바 시작 위치
+
+//        forDetail.add(scroll);
+
+
+
+
+//        contentPane.add(scroll);
+        contentPane.add(panel);
+        contentPane.add(forDetail);
 
 
 
