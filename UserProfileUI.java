@@ -1,12 +1,27 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.*;
+import java.util.ArrayList;
 
 public class UserProfileUI extends JFrame {
+    Connection con=null;
+    DefaultTableModel model;
     public UserProfileUI(){
         //나중에는 매개변수로 어떤 사용자의 게시글 정보를 볼 지 지정
+
+        try{//DB 연동
+            this.con= DriverManager.getConnection(url,user,password);
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("입력 실패");
+        }
 
         setSize(720,900);
         setResizable(false); //크기 변경 불가능
@@ -60,44 +75,127 @@ public class UserProfileUI extends JFrame {
         contentPane.add(writerProfile);
 
         JPanel postList=new JPanel();
-        postList.setBounds(40,200,650,700);
+        postList.setBackground(Color.white);
 
         //각각의 포스트들 JPanel에 붙이기! 2023.05.31
-        String[] col={"사진,제목,설정"};
-        Object temp[][]= {{new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\13.png"),"임시 게시판입니다",":"},
-        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\14.png"),"대체 왜 안나와!??",":"},
-        {new ImageIcon("C:\\Users\\손혜진\\Pictures\\잡\\15.png"),"미안합니다 테스트 해야합니다",":"}};
 
-        JTable board=new JTable(temp,col);
+        model=sqlRun(con,"select * from 게시글 where 작성자='dangdang'");//임시로 지정, 나중에는 Login에서 ID 받아야함
+
+        JTable board=new JTable(model);
         board.setShowGrid(false);
         board.setFont(MainUI.font);
         board.setSelectionBackground(Color.white);
         board.setTableHeader(null); //테이블 헤더 없앰
-        board.setModel(new DefaultTableModel(temp,col){
+        tableFit(board);
+
+        board.setRowHeight(100); //행 높이
+
+        postList.add(board);
+
+        //2023.07.04
+        JScrollPane scrollPane=new JScrollPane(board);
+        scrollPane.getViewport().setBackground(Color.white); //행이 없는 빈 셀의 색
+        postList.add(scrollPane);
+        scrollPane.setPreferredSize(new Dimension(640,620));
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        postList.setBounds(40,200,640,650);
+        contentPane.add(postList);
+
+        setVisible(true);
+    }
+    private DefaultTableModel sqlRun(Connection con, String sql) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Object [][]data = null;
+        String []columns = {"사진","제목","설정"};
+
+
+        ArrayList l = new ArrayList<Object>();
+        try {
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            int count = 0;
+            int count2 = 0;
+            while(rs.next()) {
+                InputStream in = rs.getBinaryStream(3);
+                if (in != null) {
+                    l.add(new ImageIcon(in.readAllBytes()));
+                }
+                else {
+                    l.add(null);
+                }
+                l.add(rs.getString(2).strip());
+                l.add(":");
+
+                //2023.06.29 중간 정렬 하기!!
+
+                count++;
+            }
+            data = new Object[count][3];
+            for (int i = 0; i < count; i++) {
+                for (int j = 0; j < 3; j++) {
+                    if (j == 0) {
+                        Image img = ((ImageIcon)l.get(count2)).getImage();
+                        img = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        data[i][j] = new ImageIcon(img);
+                    }
+                    else {
+                        data[i][j] = l.get(count2);
+                    }
+                    count2++;
+                }
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            try {
+                rs.close();
+                pstmt.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        DefaultTableModel model = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
-
             @Override
-            public Class getColumnClass(int columnIndex) {
-                return getValueAt(0, columnIndex).getClass();
+            public Class<?> getColumnClass(int column) {
+                if (column >= 3) column = column % 4;
+                switch(column) {
+                    case 0: return ImageIcon.class;
+                    case 1, 2: return String.class;
+                    default: return Object.class;
+                }
             }
-        });
+        };
+        return model;
+    }
 
+    private void tableFit(JTable table) {
 
+        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
+//        headerRenderer.setBackground(new Color(22, 185, 163));
 
-        //내일은 옆에 애들 마저 붙이기
-//        board.getColumnModel().getColumn(2).setCellRenderer(new TableCell());
-//        board.getColumnModel().getColumn(2).setCellEditor(new TableCell());
-        board.setRowHeight(100); //행 높이
-        postList.add(board);
-        JScrollPane scrollPane=new JScrollPane(board);
-        postList.add(scrollPane);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        contentPane.add(postList);
+        for (int i0 = 0; i0 < table.getModel().getColumnCount(); i0++) {
+            table.getColumnModel().getColumn(i0).setHeaderRenderer(headerRenderer);
+        }
 
-        setVisible(true);
-}
+        for (int row = 0; row < table.getRowCount(); row++)
+        {
+            int rowHeight = table.getRowHeight();
+            for (int column = 0; column < table.getColumnCount(); column++)
+            {
+                Component comp = table.prepareRenderer(table.getCellRenderer(row, column), row, column);
+                rowHeight = Math.max(rowHeight, comp.getPreferredSize().height);
+            }
+            table.setRowHeight(row, rowHeight);
+        }
 
+        table.getColumnModel().getColumn(0).setPreferredWidth(120);
+        table.getColumnModel().getColumn(1).setPreferredWidth(110);
+        table.getColumnModel().getColumn(2).setPreferredWidth(110);
+    }
 }
