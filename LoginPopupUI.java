@@ -1,4 +1,5 @@
 //2023.05.17~05.19
+//기능 구현 끝 2022.07.06
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,20 +10,8 @@ import java.awt.event.MouseEvent;
 import java.sql.*;
 
 public class LoginPopupUI extends JFrame{
-    Connection con=null;
-    public LoginPopupUI(){
+    public LoginPopupUI(Connection con){
         //06.22 DB 연동
-        try{//DB 연동
-            String driver="oracle.jdbc.driver.OracleDriver";
-            String url="jdbc:oracle:thin:@localhost:1521:orcl";
-            String user=유저명;
-            String password=비밀번호;
-            this.con= DriverManager.getConnection(url,user,password);
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("입력 실패");
-        }
-
 
         setSize(500,300);
         setResizable(false); //크기 변경 불가능
@@ -39,7 +28,7 @@ public class LoginPopupUI extends JFrame{
         id.setSize(300,50);
         c.add(id);
 
-        JTextField pw=new HintTextField("PW");
+        JPasswordField pw=new JPasswordField("");
         pw.setLocation(30,110);
         pw.setSize(300,50);
         c.add(pw);
@@ -47,6 +36,7 @@ public class LoginPopupUI extends JFrame{
         JButton login=new JButton("로그인");
         login.setLocation(350,50);
         login.setSize(100,110);
+        login.setFont(MainUI.font);
         c.add(login);
 
         JLabel isFirst=new JLabel("처음이신가요?");
@@ -85,19 +75,24 @@ public class LoginPopupUI extends JFrame{
                     if(rs.next()){
                         if(ID.equals(rs.getString("아이디"))){
                             if(PW.equals(rs.getString("비밀번호"))){
-                                JOptionPane.showMessageDialog(null,"로그인 성공","로그인 성공",JOptionPane.INFORMATION_MESSAGE);
-//                                new MainUI(con,rs.getString("아이디"));
-
+                                JLabel label=new JLabel("로그인 성공");
+                                label.setFont(MainUI.font);
+                                JOptionPane.showMessageDialog(null,label,"로그인 성공",JOptionPane.INFORMATION_MESSAGE);
+                                new MainUI(ID);
                                 dispose();
                             }
                             else{
-                                JOptionPane.showMessageDialog(null,"아이디 또는 비밀번호를 다시 확인해주세요","로그인 실패",JOptionPane.WARNING_MESSAGE);
+                                JLabel label=new JLabel("아이디 또는 비밀번호를 다시 확인해주세요");
+                                label.setFont(MainUI.font);
+                                JOptionPane.showMessageDialog(null,label,"로그인 실패",JOptionPane.WARNING_MESSAGE);
                             }
                         }
 
                     }
                     else{
-                        JOptionPane.showMessageDialog(null,"아이디 또는 비밀번호를 다시 확인해주세요","로그인 실패",JOptionPane.WARNING_MESSAGE);
+                        JLabel label=new JLabel("아이디 또는 비밀번호를 다시 확인해주세요");
+                        label.setFont(MainUI.font);
+                        JOptionPane.showMessageDialog(null,label,"로그인 실패",JOptionPane.WARNING_MESSAGE);
                     }
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
