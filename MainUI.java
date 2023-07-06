@@ -25,18 +25,14 @@ public class MainUI extends JFrame { //JFrame 상속
     Connection con=null;
     public static JTable board;
     DefaultTableModel model;
+    int inter;
     //프레임 생성
-    public MainUI(){
+    String id="";
+    public MainUI(String ID){
+        id=ID;
 
         try{//DB 연동
-            String driver="oracle.jdbc.driver.OracleDriver";
-            String url="jdbc:oracle:thin:@localhost:1521:orcl";
-            String user=
-            String password=
-            this.con= DriverManager.getConnection(url,user,password);
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("입력 실패");
+            
         }
 
         setSize(1080,720);
@@ -72,27 +68,51 @@ public class MainUI extends JFrame { //JFrame 상속
 
         //2023.05.10 사용자 프로필 사진
         ImageIcon defaultUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+
+        //사진 크기 조정 (05.27.. 덕분에 원본 화질로 이쁘게 저장 가능)
+
+
+
+        //2023.05.10 사용자 닉네임
+        //로그인 됐는지 안됐는지
+        inter=0;
+        if(id.equals("")){
+            nickname=new JLabel("<html><u>로그인해주세요</u></html>");
+            nickname.setForeground(Color.BLUE);
+        }else{
+            String sql="select * from 회원 where 아이디='"+id+"'";
+            try{
+                Statement stat=con.createStatement();
+                ResultSet rs=stat.executeQuery(sql);
+                while(rs.next()){
+                    nickname=new JLabel(rs.getString(3).strip());
+                    defaultUserIcon=new ImageIcon(rs.getString(6).strip());
+                    inter=rs.getInt(4);
+                    System.out.println(inter);
+                }
+            }catch (SQLException e){
+                throw new RuntimeException(e);
+            }
+            nickname.setForeground(Color.BLACK);
+        }
+
         Image img=defaultUserIcon.getImage();
         Image newing=img.getScaledInstance(50,50,Image.SCALE_SMOOTH);
         defaultUserIcon=new ImageIcon(newing);
-        //사진 크기 조정 (05.27.. 덕분에 원본 화질로 이쁘게 저장 가능)
-
         defaultIcon=new JLabel(defaultUserIcon);
         defaultIcon.setBounds(950,20,50,50);
         contentPane.add(defaultIcon);
 
-        //2023.05.10 사용자 닉네임
-        nickname=new JLabel("<html><u>로그인해주세요</u></html>");
         nickname.setLocation(830,20);
         nickname.setSize(100,50);
         nickname.setFont(font);
-        nickname.setForeground(Color.BLUE);
         nickname.setHorizontalAlignment(JLabel.RIGHT);
 
         //사용자 팝업창(2023.05.28)
         //로그인 된 사용자만! 나중에 풀어야함
+        //2023.07.06 풀었다
 
-//        if(!nickname.getText().equals("<html><u>로그인해주세요</u></html>")){
+        if(!nickname.getText().equals("<html><u>로그인해주세요</u></html>")){
             JPopupMenu popupMenu=new JPopupMenu("User");
 
             JMenuItem managePost=new JMenuItem("내 게시글 관리");
@@ -104,7 +124,7 @@ public class MainUI extends JFrame { //JFrame 상속
             setting.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    new SettingUI();
+                    new SettingUI(con,id);
                     dispose();
                 }
             });
@@ -124,7 +144,7 @@ public class MainUI extends JFrame { //JFrame 상속
             });
 
             contentPane.add(popupMenu);
-//        }
+        }
 
 
         //사용자 닉네임에 어차피 특수문자 안받을거니까.. _이거 빼고
@@ -136,7 +156,7 @@ public class MainUI extends JFrame { //JFrame 상속
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     //LoginPopupUI로 이동할거임
-                    new LoginPopupUI();
+                    new LoginPopupUI(con);
                 }
             });
         }
@@ -156,7 +176,7 @@ public class MainUI extends JFrame { //JFrame 상속
         contentPane.add(rIcon);
 
         //HintTextField 사용해서 커서 가면 자동으로 지워지도록..! 2023.05.01
-        JTextField search=new HintTextField("Search");
+        JTextField search=new JTextField();
         search.setLocation(100,20);
         search.setSize(500,50);
         contentPane.add(search);
@@ -165,8 +185,9 @@ public class MainUI extends JFrame { //JFrame 상속
         JButton searchBtn=new JButton("검색");
         searchBtn.setLocation(600, 20);
         searchBtn.setSize(80,50);
+        searchBtn.setFont(font);
         searchBtn.setFocusPainted(false);//선택됐을 때 테두리 안함
-        searchBtn.setBackground(Color.gray);
+        searchBtn.setBackground(Color.ORANGE);
         contentPane.add(searchBtn);
 
 
@@ -178,7 +199,12 @@ public class MainUI extends JFrame { //JFrame 상속
 
 
         //2023.06.28 DB랑 더 제대로 연동해보기
-        model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+        if(inter==0){
+            model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+        }
+        else{
+            model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+        }
 
         board=new JTable(model);
         board.setShowGrid(false);
@@ -190,21 +216,16 @@ public class MainUI extends JFrame { //JFrame 상속
         //테이블 행 위치 못바꾸도록 설정
 
         tableFit(board);
-        //더블 클릭 이벤트 2023.05.24
+        //더블 클릭 이벤트 2023.05.24;
         board.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount()==2){
-                    new PostUI();
+                    new PostUI(con);
                     dispose();
                 }
             }
         });
-
-//        board.getTableHeader().setReorderingAllowed(false);//열 이동 불가
-//        board.getTableHeader().setResizingAllowed(false);//크기 조절 불가
-        board.getColumnModel().getColumn(3).setCellRenderer(new TableCell());
-        board.getColumnModel().getColumn(3).setCellEditor(new TableCell());
         board.setRowHeight(200); //행 높이
 
 
@@ -212,7 +233,12 @@ public class MainUI extends JFrame { //JFrame 상속
             @Override
             public void mouseClicked(MouseEvent e) {
                 //새로고침을 누르면
-                model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                if(inter==0){
+                    model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                }
+                else{
+                    model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+                }
                 board.setModel(model);
                 model.fireTableDataChanged();
 
@@ -230,8 +256,48 @@ public class MainUI extends JFrame { //JFrame 상속
         scroll.setPreferredSize(new Dimension(1000,550));
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         panel.setBounds(40, 80,1000,600);
-        contentPane.add(panel); // 스크롤바를 테이블에 부착
+        contentPane.add(panel); //
 
+        searchBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(!search.getText().toString().equals("")){
+                    //검색 내용이 있으면
+
+                    //검색 하면 왜 안바뀌는지 내일 찾아보기
+                    if(inter==0){
+                        model=sqlRun(con,"select * from 게시글 where 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+                    }
+                    else{
+                        model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+                    }
+
+                    board.setModel(model);
+                    tableFit(board);
+                    model.fireTableDataChanged();
+
+                    panel.revalidate();
+                    panel.repaint();
+                    SwingUtilities.updateComponentTreeUI(contentPane);
+                }
+                else{
+                    if(inter==0){
+                        model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                    }
+                    else{
+                        model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+                    }
+
+                    board.setModel(model);
+                    model.fireTableDataChanged();
+
+
+                    panel.revalidate();
+                    panel.repaint();
+                    SwingUtilities.updateComponentTreeUI(contentPane);
+                }
+            }
+        });
 
         //새로고침 이벤트
 
@@ -268,11 +334,10 @@ public class MainUI extends JFrame { //JFrame 상속
     }
 
     public static void main(String[] args) {
-        MainUI mainUI =new MainUI(); //프레임을 불러옴
+        MainUI mainUI =new MainUI(""); //프레임을 불러옴
     }
 
     private DefaultTableModel sqlRun(Connection con, String sql) {
-        String[] row = new String[5];
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         Object [][]data = null;
@@ -283,23 +348,23 @@ public class MainUI extends JFrame { //JFrame 상속
         try {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
-            Object[] ob = new Object[4];
             int count = 0;
             int count2 = 0;
             while(rs.next()) {
-                InputStream in = rs.getBinaryStream(4);
-                if (in != null) {
-                    l.add(new ImageIcon(in.readAllBytes()));
+                //DB에서 사진은 파일 위치만 저장해서 파일 위치에 있는 사진을 갖고오기
+                String i="";
+                if(rs.getString(6).strip()==null){
+                    i=null;
+                }else{
+                    i=rs.getString(6).strip();
                 }
-                else {
-                    l.add(null);
-                }
+                l.add(new ImageIcon(i));
                 l.add(rs.getString(2).strip());
                 l.add(rs.getString(3).strip());
                 l.add(":");
-                
+
                 //2023.06.29 중간 정렬 하기!!
-                
+
                 count++;
             }
             data = new Object[count][4];
@@ -307,7 +372,7 @@ public class MainUI extends JFrame { //JFrame 상속
                 for (int j = 0; j < 4; j++) {
                     if (j == 0) {
                         Image img = ((ImageIcon)l.get(count2)).getImage();
-                        img = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        img = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
                         data[i][j] = new ImageIcon(img);
                     }
                     else {
