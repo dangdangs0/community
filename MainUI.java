@@ -33,6 +33,9 @@ public class MainUI extends JFrame { //JFrame 상속
 
         try{//DB 연동
             
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("입력 실패");
         }
 
         setSize(1080,720);
@@ -117,8 +120,8 @@ public class MainUI extends JFrame { //JFrame 상속
 
             JMenuItem managePost=new JMenuItem("내 게시글 관리");
             managePost.setFont(font);
-            JMenuItem manageLike=new JMenuItem("좋아요 관리");
-            manageLike.setFont(font);
+            JMenuItem write=new JMenuItem("글쓰기");
+            write.setFont(font);
             JMenuItem setting=new JMenuItem("설정");
             setting.setFont(font);
             setting.addActionListener(new ActionListener() {
@@ -128,12 +131,23 @@ public class MainUI extends JFrame { //JFrame 상속
                     dispose();
                 }
             });
+            JMenuItem logout=new JMenuItem("로그아웃");
+            logout.setFont(font);
+            logout.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                    new MainUI("");
+                }
+            });
 
+            popupMenu.add(write);
+            popupMenu.addSeparator();//구분선 추가
             popupMenu.add(managePost);
             popupMenu.addSeparator();//구분선 추가
-            popupMenu.add(manageLike);
-            popupMenu.addSeparator();//구분선 추가
             popupMenu.add(setting);
+            popupMenu.addSeparator();
+            popupMenu.add(logout);
 
             //PostUI에서 팝업메뉴 안열리는거 고쳐야함!
             defaultIcon.addMouseListener(new MouseAdapter() {
@@ -179,6 +193,7 @@ public class MainUI extends JFrame { //JFrame 상속
         JTextField search=new JTextField();
         search.setLocation(100,20);
         search.setSize(500,50);
+        search.setFont(font);
         contentPane.add(search);
 
         //검색 버튼 2023.05.01
@@ -221,7 +236,10 @@ public class MainUI extends JFrame { //JFrame 상속
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount()==2){
-                    new PostUI(con);
+                    Object value=board.getValueAt(board.getSelectedRow(),0);
+                    int postID=(int)value;
+                    //게시글 번호 넘겨줌
+                    new PostUI(con,postID);
                     dispose();
                 }
             }
@@ -341,7 +359,7 @@ public class MainUI extends JFrame { //JFrame 상속
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         Object [][]data = null;
-        String []columns = {"사진","제목","작성자","설정"};
+        String []columns = {"번호","사진","제목","작성자","설정"};
 
 
         ArrayList l = new ArrayList<Object>();
@@ -358,19 +376,21 @@ public class MainUI extends JFrame { //JFrame 상속
                 }else{
                     i=rs.getString(6).strip();
                 }
+                l.add(rs.getInt(1));
                 l.add(new ImageIcon(i));
                 l.add(rs.getString(2).strip());
                 l.add(rs.getString(3).strip());
                 l.add(":");
 
+
                 //2023.06.29 중간 정렬 하기!!
 
                 count++;
             }
-            data = new Object[count][4];
+            data = new Object[count][5];
             for (int i = 0; i < count; i++) {
-                for (int j = 0; j < 4; j++) {
-                    if (j == 0) {
+                for (int j = 0; j < 5; j++) {
+                    if (j == 1) {
                         Image img = ((ImageIcon)l.get(count2)).getImage();
                         img = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
                         data[i][j] = new ImageIcon(img);
@@ -399,10 +419,11 @@ public class MainUI extends JFrame { //JFrame 상속
             }
             @Override
             public Class<?> getColumnClass(int column) {
-                if (column >= 4) column = column % 4;
+                if (column >= 5) column = column % 5;
                 switch(column) {
-                    case 0: return ImageIcon.class;
-                    case 1, 2: return String.class;
+                    case 0: return Integer.class;
+                    case 1: return ImageIcon.class;
+                    case 2, 3: return String.class;
                     default: return Object.class;
                 }
             }
@@ -433,6 +454,7 @@ public class MainUI extends JFrame { //JFrame 상속
         table.getColumnModel().getColumn(0).setPreferredWidth(120);
         table.getColumnModel().getColumn(1).setPreferredWidth(110);
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setPreferredWidth(200);
         table.getColumnModel().getColumn(3).setPreferredWidth(200);
     }
 }
