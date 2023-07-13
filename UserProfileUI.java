@@ -17,11 +17,7 @@ public class UserProfileUI extends JFrame {
         //나중에는 매개변수로 어떤 사용자의 게시글 정보를 볼 지 지정
 
         try{//DB 연동
-            String driver="oracle.jdbc.driver.OracleDriver";
-            String url="jdbc:oracle:thin:@localhost:1521:orcl";
-            String user="COMMUNITY";
-            String password="2489";
-            this.con= DriverManager.getConnection(url,user,password);
+            
         }catch (Exception e){
             e.printStackTrace();
             System.out.println("입력 실패");
