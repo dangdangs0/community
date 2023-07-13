@@ -17,6 +17,10 @@ public class UserProfileUI extends JFrame {
         //나중에는 매개변수로 어떤 사용자의 게시글 정보를 볼 지 지정
 
         try{//DB 연동
+            String driver="oracle.jdbc.driver.OracleDriver";
+            String url="jdbc:oracle:thin:@localhost:1521:orcl";
+            String user="COMMUNITY";
+            String password="2489";
             this.con= DriverManager.getConnection(url,user,password);
         }catch (Exception e){
             e.printStackTrace();
@@ -41,7 +45,7 @@ public class UserProfileUI extends JFrame {
         backIcon.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new PostUI();
+//                new PostUI(con);
                 dispose();
             }
         });
@@ -117,13 +121,14 @@ public class UserProfileUI extends JFrame {
             int count = 0;
             int count2 = 0;
             while(rs.next()) {
-                InputStream in = rs.getBinaryStream(3);
-                if (in != null) {
-                    l.add(new ImageIcon(in.readAllBytes()));
+                //DB에서 사진은 파일 위치만 저장해서 파일 위치에 있는 사진을 갖고오기
+                String i="";
+                if(rs.getString(6).strip()==null){
+                    i=null;
+                }else{
+                    i=rs.getString(6).strip();
                 }
-                else {
-                    l.add(null);
-                }
+                l.add(new ImageIcon(i));
                 l.add(rs.getString(2).strip());
                 l.add(":");
 
@@ -136,7 +141,7 @@ public class UserProfileUI extends JFrame {
                 for (int j = 0; j < 3; j++) {
                     if (j == 0) {
                         Image img = ((ImageIcon)l.get(count2)).getImage();
-                        img = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        img = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
                         data[i][j] = new ImageIcon(img);
                     }
                     else {
