@@ -4,13 +4,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 //2023.05.26
 
 public class SettingUI extends JFrame {
     public static Font semiTitleFont=new Font("Aa합정산스",Font.TRUETYPE_FONT, 30);
     Point initialClick;
-    public SettingUI(){
+    public SettingUI(Connection con, String id){
         //2023.05.26
         setSize(1080,720);
         setResizable(false); //크기 변경 불가능
@@ -31,7 +35,7 @@ public class SettingUI extends JFrame {
         backIcon.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new MainUI();
+                new MainUI(MainUI.nickname.getText());
                 dispose();
             }
         });
@@ -72,7 +76,34 @@ public class SettingUI extends JFrame {
         contentPane.add(line);
 
         //2023.05.27 사용자 사진 변경파트
+        String sql="select * from 회원 where 아이디='"+id+"'";
+
+
+        JTextField changeDescript=new HintTextField("한 줄 소개를 입력해주세요");
+
+
         ImageIcon changeUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+        try{
+            Statement stat=con.createStatement();
+            ResultSet rs=stat.executeQuery(sql);
+            while(rs.next()){
+                changeUserIcon=new ImageIcon(rs.getString(6).strip());
+                Image image=changeUserIcon.getImage();
+                Image newing=image.getScaledInstance(200,200,Image.SCALE_SMOOTH);
+                changeUserIcon=new ImageIcon(newing);
+
+                if(rs.getString(5)==null){//한 줄 소개가 처음 가입하면 null 이기 때문.
+                    changeDescript=new HintTextField("한 줄 소개를 입력해주세요");
+                }else{
+                    String show=rs.getString(5).strip();
+                    changeDescript=new JTextField(show);
+                }
+
+
+            }
+        }catch (SQLException e){
+            throw new RuntimeException(e);
+        }
         Image image=changeUserIcon.getImage();
         Image newing=image.getScaledInstance(200,200,Image.SCALE_SMOOTH);
         changeUserIcon=new ImageIcon(newing);
@@ -124,10 +155,10 @@ public class SettingUI extends JFrame {
         description.setBounds(500,490,100,50);
         contentPane.add(description);
 
-        JTextField changeDescript=new HintTextField("한 줄 소개를 입력해주세요");
         changeDescript.setFont(MainUI.font);
         changeDescript.setBounds(500,540,300,50);
         contentPane.add(changeDescript);
+
 
         JButton save=new JButton("저장");
         save.setFont(MainUI.font);
