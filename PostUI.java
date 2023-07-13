@@ -6,13 +6,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.*;
 
 //2023.05.24~25 1차
 
 public class PostUI extends JFrame {
     public static Font titleFont=new Font("Aa합정산스",Font.BOLD, 40); //타이틀 폰트
     Point initialClick;
-    public PostUI(){
+    public PostUI(Connection con, int postID){
         setSize(1080,720);
         setResizable(false); //크기 변경 불가능
         setLocationRelativeTo(null); //화면 가운데 배치
@@ -32,7 +33,7 @@ public class PostUI extends JFrame {
         backIcon.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new MainUI();
+                new MainUI("");
                 dispose();
             }
         });
@@ -67,7 +68,72 @@ public class PostUI extends JFrame {
         //게시글 제목
 
         //MainUI에서 받아와서 띄워줄거임
+
         JLabel title=new JLabel("게시글 제목이 적힐 것 입니다");
+        ImageIcon wIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+        String userText="Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
+                "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
+                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
+                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
+                "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
+                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
+                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
+                "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
+                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
+                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
+                "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
+                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
+                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum.";
+
+        String commentSpace="                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>";
+
+
+        JLabel writerName=new JLabel("작성자 닉네임");
+
+
+        String sql="select * from 게시글 where 게시글번호= ?";
+        try{
+            PreparedStatement ps=con.prepareStatement(sql);
+            ps.setInt(1,postID);
+            ResultSet rs=ps.executeQuery();
+            while(rs.next()){
+                title=new JLabel(rs.getString(2).strip());
+                userText=rs.getString(4).strip();
+
+                String postOwner=rs.getString(3).strip();
+                String findPic="select * from 회원 where 아이디='"+postOwner+"'";
+                try{
+                    Statement st=con.createStatement();
+                    ResultSet r=st.executeQuery(findPic);
+                    while(r.next()){
+                        wIcon=new ImageIcon(r.getString(6).strip());
+                        writerName=new JLabel(r.getString(3).strip());
+                    }
+                }catch (SQLException e){
+                    throw new RuntimeException(e);
+                }
+            }
+        }catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+
         title.setFont(titleFont);
         title.setHorizontalAlignment(JLabel.CENTER);
         title.setLocation(110,40);
@@ -82,7 +148,7 @@ public class PostUI extends JFrame {
         panel.add(line);
 
         //2023.05.25 작성자 아이콘
-        ImageIcon wIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+
         Image img=wIcon.getImage();
         Image newing=img.getScaledInstance(50,50,Image.SCALE_SMOOTH);
         wIcon=new ImageIcon(newing);
@@ -92,7 +158,7 @@ public class PostUI extends JFrame {
         panel.add(writerIcon);
 
         //2023.05.25 작성자 닉네임
-        JLabel writerName=new JLabel("작성자 닉네임");
+
         writerName.setLocation(110,130);
         writerName.setSize(100,50);
         writerName.setFont(MainUI.font);
@@ -132,39 +198,12 @@ public class PostUI extends JFrame {
         forDetail.setBackground(Color.white);
         forDetail.setBounds(120,260,850,450);
 
-        String userText="Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
-        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
-                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
-                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
-        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
-                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
-                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
-        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
-                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
-                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum."+
-                "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
-                "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <br/><br/>" +
-                "Exceptioneur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est labourum.";
 
-        String commentSpace="                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>"+
-                "                                            <br/><br/>";
 
         userText+=commentSpace;
 
 
-        JLabel text=new JLabel("<HTML><center>"+userText+"</center></HTML><br/><br/>");
+        JLabel text=new JLabel("<html><br/>"+userText+"<html>",SwingConstants.CENTER);
         text.setLocation(100,200);
         text.setSize(800,900);
         text.setFont(MainUI.font);
@@ -174,16 +213,18 @@ public class PostUI extends JFrame {
 
         JSeparator sep=new JSeparator();
         sep.setOrientation(SwingConstants.HORIZONTAL);
-        sep.setBounds(370,680,700,5);
+        sep.setBounds(80,250,700,5);
         sep.setForeground(Color.black);
         text.add(sep);
+        text.setLayout(null);
 
         forDetail.add(text);
 
+
+
         //댓글창도 만들기
         JTextArea comment=new JTextArea("");
-        comment.setBounds(430,710,600,200);
-//        comment.setBackground(Color.gray);
+        comment.setBounds(130,300,600,200);
         comment.setFont(MainUI.font);
 
         TitledBorder border=BorderFactory.createTitledBorder("댓글");
@@ -192,7 +233,7 @@ public class PostUI extends JFrame {
         text.add(comment);
 
         JButton regist=new JButton("등록");
-        regist.setBounds(950,930,80,40);
+        regist.setBounds(650,520,80,40);
         regist.setFont(MainUI.font);
         text.add(regist);
         regist.addActionListener(new ActionListener() {
