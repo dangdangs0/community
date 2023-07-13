@@ -11,8 +11,8 @@ public class SignUpPopupUI extends JFrame {
         try{//DB 연동
             String driver="oracle.jdbc.driver.OracleDriver";
             String url="jdbc:oracle:thin:@localhost:1521:orcl";
-            String user=유저명;
-            String password=데이터베이스 비밀번호;
+            String user="COMMUNITY";
+            String password="2489";
             this.con= DriverManager.getConnection(url,user,password);
         }catch (Exception e){
             e.printStackTrace();
