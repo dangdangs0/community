@@ -3,7 +3,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
+//2023.07.16-2023.07.17 기능 구현 완
 class byeUserPanel extends JPanel {
     public byeUserPanel(Connection con, String id){
         setLayout(null);
@@ -12,7 +16,7 @@ class byeUserPanel extends JPanel {
 
         String sql="select * from 회원 where 아이디='"+id+"'";
 
-        //각각 라벨과 텍스트필드
+        //각각 라벨과 텍스트필드q
         JLabel userid=new JLabel("아이디");
         userid.setFont(MainUI.font);
         userid.setBounds(250,120,100,50);
@@ -50,12 +54,46 @@ class byeUserPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 //저장 버튼을 눌렀을 때만 반영해야함
                 if(check.isSelected()){
-
+                    String ID=confirmID.getText();
+                    String PW=confirmPW.getText();
+                    try{
+                        Statement stat=con.createStatement();
+                        ResultSet rs=stat.executeQuery(sql);
+                        if(rs.next()){
+                            if(ID.equals(rs.getString("아이디"))){
+                                if(PW.equals(rs.getString("비밀번호"))){
+                                    //쿼리 실행해야함
+                                    String delUser="delete from 회원 where 아이디='"+id+"'";
+                                    try{
+                                        Statement st=con.createStatement();
+                                        ResultSet r=st.executeQuery(delUser);
+                                        if(r.next()){
+                                            JLabel label=new JLabel("회원탈퇴 되었습니다.");
+                                            label.setFont(MainUI.font);
+                                            JOptionPane.showMessageDialog(null,label);
+                                            System.exit(0);
+                                        }
+                                    }catch (SQLException ee){
+                                        throw new RuntimeException(ee);
+                                    }
+                                }
+                                else{
+                                    JLabel label=new JLabel("아이디 또는 비밀번호를 다시 확인해주세요");
+                                    label.setFont(MainUI.font);
+                                    JOptionPane.showMessageDialog(null,label,"확인 실패",JOptionPane.WARNING_MESSAGE);
+                                }
+                            }
+                            else{
+                                JLabel label=new JLabel("아이디 또는 비밀번호를 다시 확인해주세요");
+                                label.setFont(MainUI.font);
+                                JOptionPane.showMessageDialog(null,label,"확인 실패",JOptionPane.WARNING_MESSAGE);
+                            }
+                        }
+                    }catch (SQLException ex){
+                        throw new RuntimeException(ex);
+                    }
                     //비밀번호도 다 통과되어야함
-                    JLabel label=new JLabel("회원탈퇴 되었습니다.");
-                    label.setFont(MainUI.font);
-                    JOptionPane.showMessageDialog(null,label);
-                    new MainUI("");
+
                 }
                 else{
                     JLabel label=new JLabel("체크를 해주세요.");
