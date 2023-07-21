@@ -1,3 +1,5 @@
+import com.sun.tools.javac.Main;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -10,10 +12,17 @@ import java.sql.*;
 
 //2023.05.24~25 1차
 
+//앞으로의 기능 구현 남은거
+//2. 게시글에 사진
+//DB저장시 엔터
+
+
 public class PostUI extends JFrame {
-    public static Font titleFont=new Font("Aa합정산스",Font.BOLD, 40); //타이틀 폰트
+    public static Font titleFont=new Font("Aa정말예쁜건이응이야",Font.BOLD, 40); //타이틀 폰트
     Point initialClick;
-    public PostUI(Connection con, int postID){
+    String postOwner;
+    public static JLabel defaultIcon;
+    public PostUI(Connection con, int postID, String id){
         setSize(1080,720);
         setResizable(false); //크기 변경 불가능
         setLocationRelativeTo(null); //화면 가운데 배치
@@ -33,18 +42,111 @@ public class PostUI extends JFrame {
         backIcon.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new MainUI("");
+                new MainUI(id);
                 dispose();
             }
         });
         contentPane.add(backIcon);
 
-        MainUI.defaultIcon.setBounds(950,20,50,50);
-        contentPane.add(MainUI.defaultIcon); //유저 아이콘
 
-        MainUI.nickname.setLocation(830,20);
-        MainUI.nickname.setSize(100,50);
-        contentPane.add(MainUI.nickname);
+        ImageIcon defaultUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+
+
+        JLabel nickname=new JLabel("<html><u>로그인해주세요</u></html>");
+        if(id.equals("")){
+            nickname=new JLabel("<html><u>로그인해주세요</u></html>");
+            nickname.setForeground(Color.BLUE);
+        }else{
+            String sql="select * from 회원 where 아이디='"+id+"'";
+            try{
+                Statement stat=con.createStatement();
+                ResultSet rs=stat.executeQuery(sql);
+                while(rs.next()){
+                    nickname=new JLabel(rs.getString(3).strip());
+                    defaultUserIcon=new ImageIcon(rs.getString(6).strip());
+                }
+            }catch (SQLException e){
+                throw new RuntimeException(e);
+            }
+            nickname.setForeground(Color.BLACK);
+        }
+
+        Image img=defaultUserIcon.getImage();
+        Image newing=img.getScaledInstance(50,50,Image.SCALE_SMOOTH);
+        defaultUserIcon=new ImageIcon(newing);
+        defaultIcon=new JLabel(defaultUserIcon);
+        defaultIcon.setBounds(950,20,50,50);
+        contentPane.add(defaultIcon);
+
+        nickname.setLocation(830,20);
+        nickname.setSize(100,50);
+        nickname.setFont(MainUI.font);
+        nickname.setHorizontalAlignment(JLabel.RIGHT);
+
+        if(!nickname.getText().equals("<html><u>로그인해주세요</u></html>")) {
+            JPopupMenu popupMenu = new JPopupMenu("User");
+
+            JMenuItem managePost = new JMenuItem("내 게시글 관리");
+            managePost.setFont(MainUI.font);
+            managePost.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new UserProfileUI(con, id,id);
+                    dispose();
+                }
+            });
+            JMenuItem write = new JMenuItem("글쓰기");
+            write.setFont(MainUI.font);
+            JMenuItem setting = new JMenuItem("설정");
+            setting.setFont(MainUI.font);
+            setting.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new SettingUI(con, id);
+                    dispose();
+                }
+            });
+            JMenuItem logout = new JMenuItem("로그아웃");
+            logout.setFont(MainUI.font);
+            logout.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                    new MainUI(id);
+                }
+            });
+
+            popupMenu.add(write);
+            popupMenu.addSeparator();//구분선 추가
+            popupMenu.add(managePost);
+            popupMenu.addSeparator();//구분선 추가
+            popupMenu.add(setting);
+            popupMenu.addSeparator();
+            popupMenu.add(logout);
+
+
+            defaultIcon.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    popupMenu.show(contentPane, 920, 80);
+                }
+            });
+            contentPane.add(popupMenu);
+        }
+
+        String noLogin=nickname.getText();
+        if(noLogin.equals("<html><u>로그인해주세요</u></html>")){
+            nickname.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    //LoginPopupUI로 이동할거임
+                    new LoginPopupUI(con);
+                    dispose();
+                }
+            });
+        }
+        contentPane.add(nickname);
+
 
         MainUI.exit.addActionListener(new ActionListener() {
             @Override
@@ -102,6 +204,11 @@ public class PostUI extends JFrame {
                 "                                            <br/><br/>"+
                 "                                            <br/><br/>"+
                 "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
+                "                                            <br/><br/>"+
                 "                                            <br/><br/>";
 
 
@@ -115,9 +222,9 @@ public class PostUI extends JFrame {
             ResultSet rs=ps.executeQuery();
             while(rs.next()){
                 title=new JLabel(rs.getString(2).strip());
-                userText=rs.getString(4).strip();
+                userText=rs.getString(4);
 
-                String postOwner=rs.getString(3).strip();
+                postOwner=rs.getString(3).strip();
                 String findPic="select * from 회원 where 아이디='"+postOwner+"'";
                 try{
                     Statement st=con.createStatement();
@@ -149,9 +256,9 @@ public class PostUI extends JFrame {
 
         //2023.05.25 작성자 아이콘
 
-        Image img=wIcon.getImage();
-        Image newing=img.getScaledInstance(50,50,Image.SCALE_SMOOTH);
-        wIcon=new ImageIcon(newing);
+        Image imgs=wIcon.getImage();
+        Image newings=imgs.getScaledInstance(50,50,Image.SCALE_SMOOTH);
+        wIcon=new ImageIcon(newings);
 
         JLabel writerIcon=new JLabel(wIcon);
         writerIcon.setBounds(55,130,50,50);
@@ -174,7 +281,7 @@ public class PostUI extends JFrame {
         seePose.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new UserProfileUI();
+                new UserProfileUI(con,postOwner,id);
                 dispose();
             }
         });
@@ -221,10 +328,34 @@ public class PostUI extends JFrame {
         forDetail.add(text);
 
 
+        //이미 있는 댓글들 부터 JList로 불러옴
+        DefaultListModel listModel=new DefaultListModel();
+        String comsql="select * from 댓글 where 게시글번호='"+postID+"'";
+
+        try{
+            Statement st=con.createStatement();
+            ResultSet rss=st.executeQuery(comsql);
+            while(rss.next()){
+                String coms= rss.getString(4).strip();
+                listModel.addElement(coms);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        JList list=new JList(listModel);
+
+        list.setFont(MainUI.font);
+        list.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        list.setBounds(130,300,600,150);
+//        JScrollPane lisscroll=new JScrollPane(list);
+        text.add(list);
+
+
 
         //댓글창도 만들기
         JTextArea comment=new JTextArea("");
-        comment.setBounds(130,300,600,200);
+        comment.setBounds(130,500,600,200);
         comment.setFont(MainUI.font);
 
         TitledBorder border=BorderFactory.createTitledBorder("댓글");
@@ -233,13 +364,43 @@ public class PostUI extends JFrame {
         text.add(comment);
 
         JButton regist=new JButton("등록");
-        regist.setBounds(650,520,80,40);
+        regist.setBounds(650,720,80,40);
         regist.setFont(MainUI.font);
         text.add(regist);
+
+
         regist.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //DB에 저장되어야 함
+                String reply=comment.getText();
+                if(id.equals("")){
+                    JOptionPane.showMessageDialog(null,"로그인을 해주세요.",null,JOptionPane.INFORMATION_MESSAGE);
+
+                }
+                else{
+                    if(reply.equals("")){
+                        JOptionPane.showMessageDialog(null,"내용을 입력해주세요.",null,JOptionPane.INFORMATION_MESSAGE);
+
+                    }else{
+                        String insertComment="insert into 댓글(게시글번호, 댓글번호, 작성자, 내용) values(?,seq_reply.nextval,?,?)";
+                        PreparedStatement p=null;
+                        try {
+                            p=con.prepareStatement(insertComment);
+                            p.setInt(1,postID);
+                            p.setString(2,id);
+                            p.setString(3,reply);
+
+                            p.executeUpdate();
+
+                            JOptionPane.showMessageDialog(null,"댓글이 등록되었습니다.",null,JOptionPane.INFORMATION_MESSAGE);
+                            dispose();
+                            new PostUI(con,postID,id);
+                            
+                        } catch (SQLException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+                }
             }
         });
 
@@ -258,12 +419,7 @@ public class PostUI extends JFrame {
 
         scroll.getViewport().setViewPosition(new Point(300,0)); //스크롤바 시작 위치
 
-//        forDetail.add(scroll);
 
-
-
-
-//        contentPane.add(scroll);
         contentPane.add(panel);
         contentPane.add(forDetail);
 
