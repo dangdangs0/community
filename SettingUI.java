@@ -1,19 +1,17 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 //2023.05.26
 
+//앞으로의 기능구현
+
 public class SettingUI extends JFrame {
-    public static Font semiTitleFont=new Font("Aa합정산스",Font.TRUETYPE_FONT, 30);
+    public static Font semiTitleFont=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 30);
     Point initialClick;
+
     public SettingUI(Connection con, String id){
         //2023.05.26
         setSize(1080,720);
@@ -25,6 +23,11 @@ public class SettingUI extends JFrame {
         contentPane.setBackground(Color.white);//배경 색 지정
         contentPane.setLayout(null);
 
+        JPanel profiles=new profilePanel(con,id);
+        JPanel change=new changePWPanel(con,id);
+        JPanel byeUser=new byeUserPanel(con,id);
+        JPanel blockList=new blockPanel(con,id);
+
         //2023.05.27 뒤로가기 추가
         ImageIcon go_back_Icon=new ImageIcon("D:\\study\\Community\\img\\go_back_icon.png");
         Image back=go_back_Icon.getImage();
@@ -35,7 +38,7 @@ public class SettingUI extends JFrame {
         backIcon.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new MainUI(MainUI.nickname.getText());
+                new MainUI(id);
                 dispose();
             }
         });
@@ -46,6 +49,17 @@ public class SettingUI extends JFrame {
         profile.setHorizontalAlignment(JLabel.LEFT);
         profile.setLocation(40,80);
         profile.setSize(100,50);
+        profile.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                contentPane.remove(change);
+                contentPane.remove(byeUser);
+                contentPane.remove(blockList);
+                contentPane.add(profiles);
+                revalidate();
+                repaint();
+            }
+        });
         contentPane.add(profile);
 
         JLabel changePW=new JLabel("비밀번호 변경");
@@ -53,6 +67,17 @@ public class SettingUI extends JFrame {
         changePW.setHorizontalAlignment(JLabel.LEFT);
         changePW.setLocation(40,130);
         changePW.setSize(200,50);
+        changePW.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                contentPane.remove(profiles);
+                contentPane.remove(byeUser);
+                contentPane.remove(blockList);
+                contentPane.add(change);
+                revalidate();
+                repaint();
+            }
+        });
         contentPane.add(changePW);
 
         JLabel denyList=new JLabel("차단목록 관리");
@@ -60,6 +85,17 @@ public class SettingUI extends JFrame {
         denyList.setHorizontalAlignment(JLabel.LEFT);
         denyList.setLocation(40,180);
         denyList.setSize(200,50);
+        denyList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                contentPane.remove(profiles);
+                contentPane.remove(change);
+                contentPane.remove(byeUser);
+                contentPane.add(blockList);
+                revalidate();
+                repaint();
+            }
+        });
         contentPane.add(denyList);
 
         JLabel leaveUser=new JLabel("회원 탈퇴");
@@ -67,6 +103,17 @@ public class SettingUI extends JFrame {
         leaveUser.setHorizontalAlignment(JLabel.LEFT);
         leaveUser.setLocation(40,600);
         leaveUser.setSize(100,50);
+        leaveUser.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                contentPane.remove(profiles);
+                contentPane.remove(change);
+                contentPane.remove(blockList);
+                contentPane.add(byeUser);
+                revalidate();
+                repaint();
+            }
+        });
         contentPane.add(leaveUser);
 
         JSeparator line=new JSeparator(); //세로 구분선
@@ -76,103 +123,8 @@ public class SettingUI extends JFrame {
         contentPane.add(line);
 
         //2023.05.27 사용자 사진 변경파트
-        String sql="select * from 회원 where 아이디='"+id+"'";
 
-
-        JTextField changeDescript=new HintTextField("한 줄 소개를 입력해주세요");
-
-
-        ImageIcon changeUserIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
-        try{
-            Statement stat=con.createStatement();
-            ResultSet rs=stat.executeQuery(sql);
-            while(rs.next()){
-                changeUserIcon=new ImageIcon(rs.getString(6).strip());
-                Image image=changeUserIcon.getImage();
-                Image newing=image.getScaledInstance(200,200,Image.SCALE_SMOOTH);
-                changeUserIcon=new ImageIcon(newing);
-
-                if(rs.getString(5)==null){//한 줄 소개가 처음 가입하면 null 이기 때문.
-                    changeDescript=new HintTextField("한 줄 소개를 입력해주세요");
-                }else{
-                    String show=rs.getString(5).strip();
-                    changeDescript=new JTextField(show);
-                }
-
-
-            }
-        }catch (SQLException e){
-            throw new RuntimeException(e);
-        }
-        Image image=changeUserIcon.getImage();
-        Image newing=image.getScaledInstance(200,200,Image.SCALE_SMOOTH);
-        changeUserIcon=new ImageIcon(newing);
-
-        JLabel changeIcon=new JLabel(changeUserIcon);
-        changeIcon.setLocation(550,80);
-        changeIcon.setSize(200,200);
-        contentPane.add(changeIcon);
-
-        //사용자 사진 변경 버튼
-        JButton changeImg=new JButton("사진 변경");
-        changeImg.setFont(MainUI.font);
-        changeImg.setBackground(Color.white);
-        changeImg.setBounds(500,300,100,50);
-        contentPane.add(changeImg);
-
-        //사진 삭제
-        JButton delImg=new JButton("삭제");
-        delImg.setFont(MainUI.font);
-        delImg.setBounds(700,300,100,50);
-        delImg.setBackground(Color.white);
-        //삭제 버튼 눌렀을 때 다이얼로그 나옴. 나중에 더 예쁘게 꾸미기.
-        delImg.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int result= JOptionPane.showConfirmDialog(SettingUI.this,"삭제하시겠습니까?","삭제",JOptionPane.YES_NO_OPTION);
-
-                if(result==JOptionPane.YES_OPTION){//시스템 종료 창
-                    //유저 아이콘이 기본 아이콘으로 바뀜.
-                }
-            }
-        });
-        contentPane.add(delImg);
-
-
-        //각각 라벨과 텍스트필드
-        JLabel nickname=new JLabel("닉네임");
-        nickname.setFont(MainUI.font);
-        nickname.setBounds(500,370,100,50);
-        contentPane.add(nickname);
-
-        JTextField changeNick=new JTextField(MainUI.nickname.getText());
-        changeNick.setFont(MainUI.font);
-        changeNick.setBounds(500,420,300,50);
-        contentPane.add(changeNick);
-
-        JLabel description=new JLabel("한 줄 소개");
-        description.setFont(MainUI.font);
-        description.setBounds(500,490,100,50);
-        contentPane.add(description);
-
-        changeDescript.setFont(MainUI.font);
-        changeDescript.setBounds(500,540,300,50);
-        contentPane.add(changeDescript);
-
-
-        JButton save=new JButton("저장");
-        save.setFont(MainUI.font);
-        save.setBackground(Color.white);
-        save.setBounds(900,600,100,50);
-
-        save.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                //저장 버튼을 눌렀을 때만 반영해야함
-                JOptionPane.showMessageDialog(SettingUI.this,"저장되었습니다.");
-            }
-        });
-        contentPane.add(save);
+        contentPane.add(profiles);
 
 
         setVisible(true);
