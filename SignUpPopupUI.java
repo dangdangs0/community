@@ -2,21 +2,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.*;
 
 //2023.05.19~2023.05.22 1차 끝
-public class SignUpPopupUI extends JFrame {
-    Connection con=null;
-    public SignUpPopupUI(){
-        try{//DB 연동
-            
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("입력 실패");
-        }
+//기능 구현 끝 2023.07.13
 
-        Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 22);
-        String[] interest={"없음","요리","게임","정치","종교","만화","음악"};
+public class SignUpPopupUI extends JFrame {
+    public static String[] interest={"없음","음악","영화","게임","스포츠",
+        "학습","패션","뷰티","뉴스","가정","경제","정치","컴퓨터","종교","여행","만화","역사","외국어"
+        ,"요리","과학"};
+    public SignUpPopupUI(Connection con){
+
+        Font font=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 22);
 
         setSize(410,650);
         setResizable(false); //크기 변경 불가능
@@ -93,6 +92,13 @@ public class SignUpPopupUI extends JFrame {
         interestCombo.setLocation(70,410);
         c.add(interestCombo);
 
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                new MainUI("");
+            }
+        });
+
 
         JButton regist=new JButton("회원가입");
         regist.setFont(font);
@@ -151,7 +157,7 @@ public class SignUpPopupUI extends JFrame {
                                         }
 
                                         PreparedStatement pstmt = null;
-                                        String insertUser = "insert into 회원 values(?,?,?,?,?,?)";
+                                        String insertUser = "insert into 회원(아이디, 비밀번호, 닉네임, 관심분야, 한줄소개) values(?,?,?,?,?)";
                                         pstmt = con.prepareStatement(insertUser);
                                         pstmt.setString(1, ID);
                                         pstmt.setString(2, PW);
@@ -163,12 +169,11 @@ public class SignUpPopupUI extends JFrame {
                                         }
 
                                         pstmt.setString(5, null);
-                                        pstmt.setString(6, null);
                                         pstmt.executeUpdate();
 
                                         JOptionPane.showMessageDialog(null, "회원가입이 완료되었습니다.", null, JOptionPane.INFORMATION_MESSAGE);
                                         dispose();
-
+                                        new MainUI("");
                                     }
                                 }
                                 else{
