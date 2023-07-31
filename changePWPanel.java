@@ -17,18 +17,6 @@ class changePWPanel extends JPanel {
         String sql="select * from 회원 where 아이디='"+id+"'";
 
 
-         try{
-            Statement stat=con.createStatement();
-            ResultSet rs=stat.executeQuery(sql);
-            while(rs.next()){
-
-            }
-        }catch (SQLException e){
-            throw new RuntimeException(e);
-        }
-
-
-
         //각각 라벨과 텍스트필드
         JLabel priorPass=new JLabel("이전 비밀번호");
         priorPass.setFont(MainUI.font);
