@@ -9,7 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.*;
 
-//2023.07.14
+//2023.07.14 1차 끝
 //DB연동까지
 public class WriteUI extends JFrame {
     Point initialClick;
@@ -86,7 +86,7 @@ public class WriteUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String Title=title.getText().strip();
-                String Desc=desc.getText().strip();
+                String Desc=desc.getText().trim();
                 String inter=interestCombo.getSelectedItem().toString();
 
                 if(Title.equals("")||Desc.equals("")){
