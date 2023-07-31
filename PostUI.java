@@ -286,12 +286,8 @@ public class PostUI extends JFrame {
                 dispose();
             }
         });
-        JMenuItem block=new JMenuItem("차단하기");
-        block.setFont(MainUI.font);
 
         writerMenu.add(seePose);
-        writerMenu.addSeparator();//구분선 추가
-        writerMenu.add(block);
 
         writerName.addMouseListener(new MouseAdapter() {
             @Override
