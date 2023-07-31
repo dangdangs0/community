@@ -1,4 +1,3 @@
-import oracle.jdbc.proxy.annotation.OnError;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -15,13 +14,16 @@ import javax.swing.ImageIcon;
 
 //2023.04.27~2023.05.15 1차 완료
 //2023.06.26 DB 연동 및 새로고침 기능, 등등 추가
+//2023.07.30 끝
+
+
 //Main UI
 public class MainUI extends JFrame { //JFrame 상속
     public Point initialClick; //마우스의 x, y좌표 저장
     public static JLabel defaultIcon;
     public static JButton exit;
     public static JLabel nickname;
-    public static Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
+    public static Font font=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 18);
     Connection con=null;
     public static JTable board;
     DefaultTableModel model;
@@ -32,7 +34,8 @@ public class MainUI extends JFrame { //JFrame 상속
         id=ID;
 
         try{//DB 연동
-            
+           
+            this.con= DriverManager.getConnection(url,user,password);
         }catch (Exception e){
             e.printStackTrace();
             System.out.println("입력 실패");
@@ -58,7 +61,9 @@ public class MainUI extends JFrame { //JFrame 상속
         exit.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int result= JOptionPane.showConfirmDialog(MainUI.this,"종료하시겠습니까?","종료",JOptionPane.YES_NO_OPTION);
+                JLabel label=new JLabel("종료하시겠습니까?");
+                label.setFont(MainUI.font);
+                int result= JOptionPane.showConfirmDialog(MainUI.this,label,"종료",JOptionPane.YES_NO_OPTION);
 
                 if(result==JOptionPane.YES_OPTION){//시스템 종료 창
                     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -91,7 +96,6 @@ public class MainUI extends JFrame { //JFrame 상속
                     nickname=new JLabel(rs.getString(3).strip());
                     defaultUserIcon=new ImageIcon(rs.getString(6).strip());
                     inter=rs.getInt(4);
-                    System.out.println(inter);
                 }
             }catch (SQLException e){
                 throw new RuntimeException(e);
@@ -120,8 +124,23 @@ public class MainUI extends JFrame { //JFrame 상속
 
             JMenuItem managePost=new JMenuItem("내 게시글 관리");
             managePost.setFont(font);
+            managePost.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new UserProfileUI(con,id,id);
+                    dispose();
+                }
+            });
             JMenuItem write=new JMenuItem("글쓰기");
             write.setFont(font);
+            write.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new WriteUI(con,id);
+                    dispose();
+                }
+            });
+
             JMenuItem setting=new JMenuItem("설정");
             setting.setFont(font);
             setting.addActionListener(new ActionListener() {
@@ -158,6 +177,7 @@ public class MainUI extends JFrame { //JFrame 상속
             });
 
             contentPane.add(popupMenu);
+
         }
 
 
@@ -171,6 +191,7 @@ public class MainUI extends JFrame { //JFrame 상속
                 public void mouseClicked(MouseEvent e) {
                     //LoginPopupUI로 이동할거임
                     new LoginPopupUI(con);
+                    dispose();
                 }
             });
         }
@@ -214,12 +235,25 @@ public class MainUI extends JFrame { //JFrame 상속
 
 
         //2023.06.28 DB랑 더 제대로 연동해보기
-        if(inter==0){
-            model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+        if(id.equals("")){
+            if(inter==0){
+                model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+            }
+            else{
+                model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+            }
         }
         else{
-            model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+            if(inter==0){
+                model=sqlRun(con,
+                        "select * " +
+                            "from 게시글 where 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') order by DBMS_RANDOM.RANDOM");
+            }
+            else{
+                model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') order by DBMS_RANDOM.RANDOM");
+            }
         }
+
 
         board=new JTable(model);
         board.setShowGrid(false);
@@ -235,11 +269,150 @@ public class MainUI extends JFrame { //JFrame 상속
         board.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if(e.getClickCount()==2){
+                if(board.getSelectedColumn()==4){
+                    if(!nickname.getText().equals("<html><u>로그인해주세요</u></html>")){
+                        //로그인 된 사람들에 한해서
+
+                        JPopupMenu popupMenu=new JPopupMenu("Deny");//차단
+
+                        JMenuItem denyWriter=new JMenuItem("작성자 차단");
+                        denyWriter.setFont(font);
+                        //작성자 차단 쿼리
+                        denyWriter.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                int result=JOptionPane.showConfirmDialog(null,"차단하시겠습니까?","차단",JOptionPane.YES_NO_OPTION);
+
+                                if(result==JOptionPane.YES_OPTION){//차단함
+                                    Object value=board.getValueAt(board.getSelectedRow(),0);
+                                    int postID=(int)value;
+                                    String postOwner="";
+
+                                    String sql="select * from 게시글 where 게시글번호=?";
+                                    try{
+                                        PreparedStatement p=con.prepareStatement(sql);
+                                        p.setInt(1,postID);
+                                        ResultSet rs=p.executeQuery();
+
+                                        while(rs.next()){
+                                            postOwner=rs.getString(3).strip();
+
+                                            if(postOwner.equals(id)){
+                                                //자기자신은 차단할 수 없음
+                                                JOptionPane.showMessageDialog(null, "자신은 차단할 수 없습니다.", null, JOptionPane.INFORMATION_MESSAGE);
+                                            }
+                                            else{
+                                                String ins="insert into 차단(사용자명,차단아이디) values (?,?)";
+                                                PreparedStatement ps=null;
+
+
+                                                try {
+                                                    ps=con.prepareStatement(ins);
+                                                    ps.setString(1,id);
+                                                    ps.setString(2,postOwner);
+
+                                                    ps.executeUpdate();
+
+                                                    JOptionPane.showMessageDialog(null, "차단되었습니다.", null, JOptionPane.INFORMATION_MESSAGE);
+
+                                                    dispose();
+                                                    new MainUI(id);
+
+                                                } catch (SQLException ex) {
+                                                    throw new RuntimeException(ex);
+                                                }
+                                            }
+                                        }
+
+
+
+                                    } catch (SQLException ex) {
+                                        throw new RuntimeException(ex);
+                                    }
+                                }
+                            }
+                        });
+
+
+                        JMenuItem call=new JMenuItem("작성자 신고");
+                        call.setFont(font);
+                        call.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                int result=JOptionPane.showConfirmDialog(null,"신고하시겠습니까?","신고",JOptionPane.YES_NO_OPTION);
+
+                                if(result==JOptionPane.YES_OPTION){//차단함
+                                    Object value=board.getValueAt(board.getSelectedRow(),0);
+                                    int postID=(int)value;
+                                    String postOwner="";
+
+                                    String sql="select * from 게시글 where 게시글번호=?";
+                                    try{
+                                        PreparedStatement p=con.prepareStatement(sql);
+                                        p.setInt(1,postID);
+                                        ResultSet rs=p.executeQuery();
+
+                                        while(rs.next()){
+                                            postOwner=rs.getString(3).strip();
+
+                                            if(postOwner.equals(id)){
+                                                //자기자신은 신고 불가능
+                                                JOptionPane.showMessageDialog(null, "자신은 신고할 수 없습니다.", null, JOptionPane.INFORMATION_MESSAGE);
+                                            }
+                                            else{
+                                                String testExist="select * from 신고 where 신고자명='"+id+"' and 신고아이디='"+postOwner+"'";
+                                                try{
+                                                    Statement s=con.createStatement();
+                                                    ResultSet rss=s.executeQuery(testExist);
+                                                    if(rss.next()){
+                                                        //만약 이미 신고했다면.. 그 사람을 그러면, 신고할 수 없음
+                                                        JOptionPane.showMessageDialog(null, "이미 신고한 대상입니다.", null, JOptionPane.INFORMATION_MESSAGE);
+
+                                                    }else{
+                                                        String ins="insert into 신고(신고자명,신고아이디) values (?,?)";
+                                                        PreparedStatement ps=null;
+
+                                                        try {
+                                                            ps=con.prepareStatement(ins);
+                                                            ps.setString(1,id);
+                                                            ps.setString(2,postOwner);
+
+                                                            ps.executeUpdate();
+
+                                                            //만약 이미 신고했다면.. 그 사람을 그러면, 신고할 수 없음
+                                                            JOptionPane.showMessageDialog(null, "신고되었습니다.", null, JOptionPane.INFORMATION_MESSAGE);
+
+                                                        } catch (SQLException ex) {
+                                                            throw new RuntimeException(ex);
+                                                        }
+                                                    }
+                                                }catch (SQLException ex) {
+                                                    throw new RuntimeException(ex);
+                                                }
+                                            }
+                                        }
+                                    } catch (SQLException ex) {
+                                        throw new RuntimeException(ex);
+                                    }
+                                }
+                            }
+                        });
+
+                        popupMenu.add(denyWriter);
+                        popupMenu.addSeparator();//구분선 추가
+                        popupMenu.add(call);
+
+                        initialClick=e.getPoint();
+                        popupMenu.show(panel,e.getX(),e.getY()); //마우스 포인트 클릭한 곳에 팝업메뉴 생성!!
+
+                    }
+
+                }
+                else if(e.getClickCount()==2){ //그 외에 것들
                     Object value=board.getValueAt(board.getSelectedRow(),0);
                     int postID=(int)value;
                     //게시글 번호 넘겨줌
-                    new PostUI(con,postID);
+                    new PostUI(con,postID,id);
                     dispose();
                 }
             }
@@ -251,11 +424,24 @@ public class MainUI extends JFrame { //JFrame 상속
             @Override
             public void mouseClicked(MouseEvent e) {
                 //새로고침을 누르면
-                if(inter==0){
-                    model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+
+                if(id.equals("")){
+                    if(inter==0){
+                        model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                    }
+                    else{
+                        model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+                    }
                 }
                 else{
-                    model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+                    if(inter==0){
+                        model=sqlRun(con,
+                                "select * " +
+                                        "from 게시글 where 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') order by DBMS_RANDOM.RANDOM");
+                    }
+                    else{
+                        model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') order by DBMS_RANDOM.RANDOM");
+                    }
                 }
                 board.setModel(model);
                 model.fireTableDataChanged();
@@ -283,12 +469,27 @@ public class MainUI extends JFrame { //JFrame 상속
                     //검색 내용이 있으면
 
                     //검색 하면 왜 안바뀌는지 내일 찾아보기
-                    if(inter==0){
-                        model=sqlRun(con,"select * from 게시글 where 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+
+                    if(id.equals("")){
+                        if(inter==0){
+                            model=sqlRun(con,"select * from 게시글 where 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+                        }
+                        else{
+                            model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+                        }
                     }
                     else{
-                        model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+                        if(inter==0){
+                            model=sqlRun(con,
+                                    "select * " +
+                                            "from 게시글 where 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') and 제목 like '%"+search.getText().strip()+"%' order by DBMS_RANDOM.RANDOM");
+                        }
+                        else{
+                            model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') and 제목 like '%"+search.getText().strip()+"%'order by DBMS_RANDOM.RANDOM");
+                        }
                     }
+
+
 
                     board.setModel(model);
                     tableFit(board);
@@ -299,11 +500,23 @@ public class MainUI extends JFrame { //JFrame 상속
                     SwingUtilities.updateComponentTreeUI(contentPane);
                 }
                 else{
-                    if(inter==0){
-                        model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                    if(id.equals("")){
+                        if(inter==0){
+                            model=sqlRun(con,"select * from 게시글 order by DBMS_RANDOM.RANDOM");
+                        }
+                        else{
+                            model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+                        }
                     }
                     else{
-                        model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'order by DBMS_RANDOM.RANDOM");
+                        if(inter==0){
+                            model=sqlRun(con,
+                                    "select * " +
+                                            "from 게시글 where 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') order by DBMS_RANDOM.RANDOM");
+                        }
+                        else{
+                            model=sqlRun(con,"select * from 게시글 where 분야='"+inter+"'and 작성자 not in (select 차단아이디 from 차단 where 사용자명='"+id+"') order by DBMS_RANDOM.RANDOM");
+                        }
                     }
 
                     board.setModel(model);
@@ -313,6 +526,8 @@ public class MainUI extends JFrame { //JFrame 상속
                     panel.revalidate();
                     panel.repaint();
                     SwingUtilities.updateComponentTreeUI(contentPane);
+
+
                 }
             }
         });
@@ -371,7 +586,7 @@ public class MainUI extends JFrame { //JFrame 상속
             while(rs.next()) {
                 //DB에서 사진은 파일 위치만 저장해서 파일 위치에 있는 사진을 갖고오기
                 String i="";
-                if(rs.getString(6).strip()==null){
+                if(rs.getString(6)==null){
                     i=null;
                 }else{
                     i=rs.getString(6).strip();
