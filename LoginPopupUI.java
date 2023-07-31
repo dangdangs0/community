@@ -1,13 +1,13 @@
 //2023.05.17~05.19
 //기능 구현 끝 2022.07.06
+//MainUI 창 닫기 위해 기능 또 추가 2023.07.13
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.sql.*;
+
+import static java.lang.System.exit;
 
 public class LoginPopupUI extends JFrame{
     public LoginPopupUI(Connection con){
@@ -20,7 +20,7 @@ public class LoginPopupUI extends JFrame{
         c.setLayout(null);
         c.setBackground(Color.white);
 
-        Font font=new Font("Aa합정산스",Font.TRUETYPE_FONT, 18);
+        Font font=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 18);
 
         //HintTextField 사용해서 커서 가면 자동으로 지워지도록..! 2023.05.01
         JTextField id=new HintTextField("ID");
@@ -55,11 +55,19 @@ public class LoginPopupUI extends JFrame{
             @Override
             public void mouseClicked(MouseEvent e) {
                 //LoginPopupUI로 이동할거임
-                new SignUpPopupUI();
+                new SignUpPopupUI(con);
                 dispose();
             }
         });
         c.add(createAccount);
+
+        //x버튼 눌렀을 때
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                new MainUI("");
+            }
+        });
 
 
         //06.22 DB 연동
@@ -78,8 +86,8 @@ public class LoginPopupUI extends JFrame{
                                 JLabel label=new JLabel("로그인 성공");
                                 label.setFont(MainUI.font);
                                 JOptionPane.showMessageDialog(null,label,"로그인 성공",JOptionPane.INFORMATION_MESSAGE);
-                                new MainUI(ID);
                                 dispose();
+                                new MainUI(ID);
                             }
                             else{
                                 JLabel label=new JLabel("아이디 또는 비밀번호를 다시 확인해주세요");
