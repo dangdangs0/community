@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -7,9 +8,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+
+//2023.07.31 기능 구현 끝
 class profilePanel extends JPanel {
     //2023.07.19 DB랑 연동하기 완료
-    //기능 구현 완
+
+    boolean deletePic=false;
+    boolean changePic=false;
+    String filepath;
     public profilePanel(Connection con, String id){
         setLayout(null);
         setBounds(250,40,800,600);
@@ -57,6 +63,20 @@ class profilePanel extends JPanel {
         changeImg.setFont(MainUI.font);
         changeImg.setBackground(Color.white);
         changeImg.setBounds(250,250,100,50);
+        changeImg.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser filecomponent=new JFileChooser();
+                filecomponent.setFileFilter(new FileNameExtensionFilter("png","jpg","jpeg"));
+                //확장자 png, jpg, jpeg만 선택 가능
+                filecomponent.setMultiSelectionEnabled(false);//다중 선택 불가
+                if(filecomponent.showOpenDialog(getParent())==JFileChooser.APPROVE_OPTION){
+                    filepath=filecomponent.getSelectedFile().toString();
+                    deletePic=false;
+                    changePic=true;
+                }
+            }
+        });
         add(changeImg);
 
         //사진 삭제
@@ -64,13 +84,15 @@ class profilePanel extends JPanel {
         delImg.setFont(MainUI.font);
         delImg.setBounds(450,250,100,50);
         delImg.setBackground(Color.white);
-        //삭제 버튼 눌렀을 때 다이얼로그 나옴. 나중에 더 예쁘게 꾸미기.
+
         delImg.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int result= JOptionPane.showConfirmDialog(null,"삭제하시겠습니까?","삭제",JOptionPane.YES_NO_OPTION);
 
-                if(result==JOptionPane.YES_OPTION){//시스템 종료
+                if(result==JOptionPane.YES_OPTION){
+                    deletePic=true;
+                    changePic=false;
                 }
             }
         });
@@ -126,11 +148,22 @@ class profilePanel extends JPanel {
                         }
                         else{
                             try{
-                                String changeq="update 회원 set 닉네임='"+changeName+"', 한줄소개='"+ finalChangeDescript.getText()+"' where 아이디='"+id+"'";
+                                String changeq="";
+                                if(deletePic){
+                                    changeq="update 회원 set 프로필사진=default, 닉네임='"+changeName+"', 한줄소개='"+ finalChangeDescript.getText()+"' where 아이디='"+id+"'";
+                                }
+                                else if(changePic){
+                                    changeq="update 회원 set 프로필사진='"+filepath+"', 닉네임='"+changeName+"', 한줄소개='"+ finalChangeDescript.getText()+"' where 아이디='"+id+"'";
+                                }
+                                else{
+                                    changeq="update 회원 set 닉네임='"+changeName+"', 한줄소개='"+ finalChangeDescript.getText()+"' where 아이디='"+id+"'";
+                                }
                                 Statement s=con.createStatement();
                                 ResultSet r=s.executeQuery(changeq);
                                 if(r.next()){
                                     JOptionPane.showMessageDialog(null,"변경되었습니다.",null,JOptionPane.INFORMATION_MESSAGE);
+                                    SwingUtilities.getWindowAncestor(getParent()).dispose();
+                                    new SettingUI(con,id);
                                 }
                             }catch (SQLException ee){
                                 throw new RuntimeException(ee);
