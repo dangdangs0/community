@@ -11,10 +11,8 @@ import java.awt.event.MouseEvent;
 import java.sql.*;
 
 //2023.05.24~25 1차
-
-//앞으로의 기능 구현 남은거
-//2. 게시글에 사진
-//DB저장시 엔터
+//~2023.07.22 2차
+//2023.07.30 끝
 
 
 public class PostUI extends JFrame {
@@ -173,6 +171,9 @@ public class PostUI extends JFrame {
 
         JLabel title=new JLabel("게시글 제목이 적힐 것 입니다");
         ImageIcon wIcon=new ImageIcon("D:\\study\\Community\\img\\user_icon_default.png");
+
+
+
         String userText="Lorem ipsum dolor sit amet, consectetur adipiscing elit, <br/><br/>" +
                 "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,<br/><br/>" +
                 "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.<br/><br/>" +
@@ -222,7 +223,7 @@ public class PostUI extends JFrame {
             ResultSet rs=ps.executeQuery();
             while(rs.next()){
                 title=new JLabel(rs.getString(2).strip());
-                userText=rs.getString(4);
+                userText=rs.getString(4).replace("\n","<br/>");
 
                 postOwner=rs.getString(3).strip();
                 String findPic="select * from 회원 where 아이디='"+postOwner+"'";
@@ -343,13 +344,15 @@ public class PostUI extends JFrame {
             throw new RuntimeException(e);
         }
 
+        //댓글에 스크롤바 붙이기 성공
         JList list=new JList(listModel);
-
         list.setFont(MainUI.font);
         list.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         list.setBounds(130,300,600,150);
-//        JScrollPane lisscroll=new JScrollPane(list);
-        text.add(list);
+        JScrollPane js=new JScrollPane();
+        js.setBounds(130,300,600,150);
+        js.setViewportView(list);
+        text.add(js);
 
 
 
@@ -395,7 +398,7 @@ public class PostUI extends JFrame {
                             JOptionPane.showMessageDialog(null,"댓글이 등록되었습니다.",null,JOptionPane.INFORMATION_MESSAGE);
                             dispose();
                             new PostUI(con,postID,id);
-                            
+
                         } catch (SQLException ex) {
                             throw new RuntimeException(ex);
                         }
