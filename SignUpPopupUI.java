@@ -15,7 +15,7 @@ public class SignUpPopupUI extends JFrame {
         ,"요리","과학"};
     public SignUpPopupUI(Connection con){
 
-        Font font=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 22);
+        Font font=new Font("",Font.TRUETYPE_FONT, 22);
 
         setSize(410,650);
         setResizable(false); //크기 변경 불가능
