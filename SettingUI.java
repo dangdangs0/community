@@ -9,7 +9,7 @@ import java.sql.Connection;
 //앞으로의 기능구현
 
 public class SettingUI extends JFrame {
-    public static Font semiTitleFont=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 30);
+    public static Font semiTitleFont=new Font("",Font.TRUETYPE_FONT, 30);
     Point initialClick;
 
     public SettingUI(Connection con, String id){
