@@ -20,7 +20,7 @@ public class LoginPopupUI extends JFrame{
         c.setLayout(null);
         c.setBackground(Color.white);
 
-        Font font=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 18);
+        Font font=new Font("",Font.TRUETYPE_FONT, 18);
 
         //HintTextField 사용해서 커서 가면 자동으로 지워지도록..! 2023.05.01
         JTextField id=new HintTextField("ID");
