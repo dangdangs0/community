@@ -23,7 +23,7 @@ public class MainUI extends JFrame { //JFrame 상속
     public static JLabel defaultIcon;
     public static JButton exit;
     public static JLabel nickname;
-    public static Font font=new Font("Aa정말예쁜건이응이야",Font.TRUETYPE_FONT, 18);
+    public static Font font=new Font("",Font.TRUETYPE_FONT, 18);
     Connection con=null;
     public static JTable board;
     DefaultTableModel model;
