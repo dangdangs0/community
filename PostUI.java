@@ -16,7 +16,7 @@ import java.sql.*;
 
 
 public class PostUI extends JFrame {
-    public static Font titleFont=new Font("Aa정말예쁜건이응이야",Font.BOLD, 40); //타이틀 폰트
+    public static Font titleFont=new Font("",Font.BOLD, 40); //타이틀 폰트
     Point initialClick;
     String postOwner;
     public static JLabel defaultIcon;
